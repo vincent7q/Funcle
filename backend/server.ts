@@ -9,7 +9,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { openDb, type Db } from './db/db';
 import { createSessionRouter } from './routes/sessionRoute';
-import { gameRoute } from './routes/gameRoute';
+import { createGameRouter } from './routes/gameRoute';
 import { statsRoute } from './routes/statsRoute';
 import { adminRoute } from './routes/adminRoute';
 
@@ -31,7 +31,7 @@ export function createApp(db: Db): Express {
   // Feature routers. session is wired to the DB; game/stats/admin are still
   // stubs (real logic lands in Phases 3.2, 7, 6 respectively).
   app.use('/api', createSessionRouter(db));
-  app.use('/api/game', gameRoute);
+  app.use('/api/game', createGameRouter(db));
   app.use('/api/stats', statsRoute);
   app.use('/api/admin', adminRoute);
 

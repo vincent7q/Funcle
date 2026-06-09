@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Coefficients } from '../../shared/types';
-import { evaluate, generateRandom, generateFromDate } from './polynomial';
+import { evaluate, generateRandom, generateFromDate, formatPolynomial } from './polynomial';
 
 /** Asserts a generated polynomial obeys the §13 rules (Q1 degree 1-3, Q2 coeffs -10..10). */
 function expectValidSecret(coeffs: Coefficients): void {
@@ -73,5 +73,34 @@ describe('generateFromDate', () => {
     const a = generateFromDate('2026-06-10');
     const b = generateFromDate('2026-06-11');
     expect(a).not.toEqual(b);
+  });
+});
+
+describe('formatPolynomial', () => {
+  it('formats x^2 - 4', () => {
+    expect(formatPolynomial([1, 0, -4])).toBe('x^2 - 4');
+  });
+
+  it('omits a coefficient of 1 but keeps it on the constant term', () => {
+    expect(formatPolynomial([1, 1])).toBe('x + 1');
+    expect(formatPolynomial([1, -1])).toBe('x - 1');
+  });
+
+  it('formats a leading negative term', () => {
+    expect(formatPolynomial([-1, 0, 0, 5])).toBe('-x^3 + 5');
+    expect(formatPolynomial([-2, 1])).toBe('-2x + 1');
+  });
+
+  it('formats a full cubic', () => {
+    expect(formatPolynomial([3, -2, 4, -5])).toBe('3x^3 - 2x^2 + 4x - 5');
+  });
+
+  it('formats a bare cubic and linear', () => {
+    expect(formatPolynomial([1, 0, 0, 0])).toBe('x^3');
+    expect(formatPolynomial([2, -1])).toBe('2x - 1');
+  });
+
+  it('formats the zero polynomial', () => {
+    expect(formatPolynomial([0])).toBe('0');
   });
 });

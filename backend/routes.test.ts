@@ -13,12 +13,11 @@ describe('route skeleton (stubs)', () => {
     expect(typeof res.body.sessionId).toBe('string');
   });
 
-  it('mounts every documented §8 route (no 404s)', async () => {
+  it('mounts the still-stubbed routes (daily, stats, admin) without 404s', async () => {
+    // Game endpoints are exercised against real sessions in routes/game.test.ts;
+    // here we only confirm the remaining routes are mounted.
     const calls = [
       request(app).get('/api/daily'),
-      request(app).post('/api/game/val').send({ sessionId: 'x', x: 0 }),
-      request(app).post('/api/game/is_inc').send({ sessionId: 'x', x: 0 }),
-      request(app).post('/api/game/target').send({ sessionId: 'x', expression: 'x' }),
       request(app).get('/api/stats/some-user'),
       request(app).post('/api/admin/login').send({ password: 'x' }),
       request(app).get('/api/admin/puzzles'),

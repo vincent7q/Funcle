@@ -68,12 +68,16 @@ export interface ValResponse {
   result: number | 'error';
   turnsRemaining: number;
   gameStatus: GameStatus;
+  /** Revealed only if this command exhausted the last turn (game now lost). */
+  secret?: string;
 }
 
 export interface IsIncResponse {
   result: IsIncResult | 'error';
   turnsRemaining: number;
   gameStatus: GameStatus;
+  /** Revealed only if this command exhausted the last turn (game now lost). */
+  secret?: string;
 }
 
 /** A correct guess: the secret is revealed only now (spec §8 /game/target). */

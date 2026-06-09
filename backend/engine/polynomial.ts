@@ -16,6 +16,38 @@ export function evaluate(coeffs: Coefficients, x: number): number {
   return coeffs.reduce((acc, c) => acc * x + c, 0);
 }
 
+/**
+ * Render coefficients (highest-degree first) as a readable polynomial string,
+ * e.g. [1,0,-4] -> "x^2 - 4". Used only to reveal the secret at game end (§8).
+ */
+export function formatPolynomial(coeffs: Coefficients): string {
+  const degree = coeffs.length - 1;
+  const parts: { negative: boolean; term: string }[] = [];
+
+  coeffs.forEach((c, i) => {
+    if (c === 0) return;
+    const power = degree - i;
+    const abs = Math.abs(c);
+    let term: string;
+    if (power === 0) {
+      term = String(abs);
+    } else {
+      const coeffPart = abs === 1 ? '' : String(abs);
+      term = coeffPart + (power === 1 ? 'x' : `x^${power}`);
+    }
+    parts.push({ negative: c < 0, term });
+  });
+
+  if (parts.length === 0) return '0';
+
+  return parts
+    .map((p, i) => {
+      if (i === 0) return (p.negative ? '-' : '') + p.term;
+      return (p.negative ? ' - ' : ' + ') + p.term;
+    })
+    .join('');
+}
+
 /** A function returning a float in [0, 1) — `Math.random` or a seeded PRNG. */
 type Rng = () => number;
 
