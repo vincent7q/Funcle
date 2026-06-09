@@ -31,11 +31,12 @@
 | 3.2 Game commands (`val` / `is_inc` / `target`) | ✅ | `0c61b22` |
 | 3.3 Boundary validation | ◑ partial | — |
 | 4.1 Static game screen + Tailwind | ✅ | `ccb954d` |
-| 4.2 Game store + API client + free-play loop | ✅ | (this commit) |
+| 4.2 Game store + API client + free-play loop | ✅ | `b33e933` |
+| 4.3 Daily mode load/resume (UI) | ✅ | (this commit) |
 
 **3.3 note:** session + game routes already validate via zod (400 on bad bodies; `val`/`is_inc` return `"error"` for invalid `x` per §13 Q4). Finish 3.3 (admin/stats validation + 400 tests) when those routes are implemented in Phases 6/7.
 
-**Next:** **4.3** daily mode load/resume in the UI, then **Phase 5** end-of-game experience (WinScreen → `PolynomialChart` graph reveal → share). Phases 6 (admin) and 7 (users/stats/secondary screens) follow; 3.3 finishes when admin/stats land. To run locally: `cd backend && npm run dev` (port 3000) + `cd frontend && npm run dev` (Vite proxies `/api` → 3000).
+**Next:** **Phase 5** end-of-game experience — 5.1 WinScreen overlay → 5.2 `PolynomialChart` graph reveal (Chart.js, `showGraph` setting) → 5.3 share (emoji grid). Phases 6 (admin) and 7 (users/stats/secondary screens) follow; 3.3 finishes when admin/stats land. To run locally: `cd backend && npm run dev` (port 3000) + `cd frontend && npm run dev` (Vite proxies `/api` → 3000).
 
 **Environment note:** frontend is pinned to a Vite 6 / Vitest 2 stack because the dev machine runs Node 20.17 (the current Vite 8/rolldown toolchain needs ≥20.19). See `CLAUDE.md` and project memory before bumping frontend deps. Branch `feat/scaffold` is **not yet pushed** to origin.
 

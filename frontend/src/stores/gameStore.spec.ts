@@ -110,6 +110,55 @@ describe('gameStore', () => {
     expect(store.secret).toBe('x^2 - 4');
   });
 
+  it('loads a daily puzzle, mapping prior history to rows', async () => {
+    mockedApi.getDaily.mockResolvedValue({
+      sessionId: 'd1',
+      turnsRemaining: 4,
+      puzzleNumber: 42,
+      history: [
+        { turnNumber: 1, command: 'val', inputX: 0, expression: null, result: '-4' },
+        { turnNumber: 2, command: 'is_inc', inputX: 1, expression: null, result: 'Increasing' },
+      ],
+    });
+    const store = useGameStore();
+    await store.startDaily();
+    expect(mockedApi.getDaily).toHaveBeenCalledWith(expect.any(String)); // anon id
+    expect(store.mode).toBe('daily');
+    expect(store.sessionId).toBe('d1');
+    expect(store.puzzleNumber).toBe(42);
+    expect(store.turnsRemaining).toBe(4);
+    expect(store.gameStatus).toBe('active');
+    expect(store.history).toEqual([
+      { state: 'val', label: 'VAL 0', result: '-4' },
+      { state: 'inc', label: 'IS_INC 1', result: 'Increasing' },
+    ]);
+  });
+
+  it('derives a won status when resuming a solved daily', async () => {
+    mockedApi.getDaily.mockResolvedValue({
+      sessionId: 'd2',
+      turnsRemaining: 4,
+      puzzleNumber: 43,
+      history: [{ turnNumber: 1, command: 'target', inputX: null, expression: 'x^2-4', result: 'correct' }],
+    });
+    const store = useGameStore();
+    await store.startDaily();
+    expect(store.gameStatus).toBe('won');
+    expect(store.history.at(-1)).toMatchObject({ state: 'target-win' });
+  });
+
+  it('derives a lost status when resuming a daily with no turns left and no win', async () => {
+    mockedApi.getDaily.mockResolvedValue({
+      sessionId: 'd3',
+      turnsRemaining: 0,
+      puzzleNumber: 44,
+      history: [{ turnNumber: 6, command: 'target', inputX: null, expression: 'x', result: 'wrong' }],
+    });
+    const store = useGameStore();
+    await store.startDaily();
+    expect(store.gameStatus).toBe('lost');
+  });
+
   it('ignores submissions once the game is over', async () => {
     const store = await startedStore();
     mockedApi.target.mockResolvedValue({

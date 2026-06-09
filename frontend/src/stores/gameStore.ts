@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import type { Command, GameMode, GameStatus, MoveRecord } from '@shared/types';
 import { TOTAL_TURNS } from '@shared/types';
 import { api } from '@/api/client';
+import { getAnonId } from '@/lib/anonId';
 import type { GridRow } from '@/components/game/rowState';
 
 type Status = 'idle' | GameStatus;
@@ -19,6 +20,13 @@ function moveToRow(move: MoveRecord): GridRow {
   return { state: won ? 'target-win' : 'target-fail', label: 'TARGET', result: won ? '🎯' : '✗' };
 }
 
+/** Derive game status from a resumed history (the /daily response omits it). */
+function deriveStatus(history: MoveRecord[], turnsRemaining: number): GameStatus {
+  if (history.some((m) => m.command === 'target' && m.result === 'correct')) return 'won';
+  if (turnsRemaining <= 0) return 'lost';
+  return 'active';
+}
+
 export const useGameStore = defineStore('game', () => {
   const sessionId = ref<string | null>(null);
   const mode = ref<GameMode>('freeplay');
@@ -29,6 +37,7 @@ export const useGameStore = defineStore('game', () => {
   const discoveredPoints = ref<{ x: number; y: number }[]>([]);
   const inputError = ref<string | null>(null);
   const loading = ref(false);
+  const puzzleNumber = ref<number | null>(null);
 
   function reset(): void {
     history.value = [];
@@ -44,8 +53,30 @@ export const useGameStore = defineStore('game', () => {
       reset();
       sessionId.value = res.sessionId;
       mode.value = 'freeplay';
+      puzzleNumber.value = null;
       turnsRemaining.value = res.turnsRemaining;
       gameStatus.value = 'active';
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  /** Load (or resume) today's daily puzzle, rebuilding the grid from history. */
+  async function startDaily(): Promise<void> {
+    loading.value = true;
+    try {
+      const res = await api.getDaily(getAnonId());
+      reset();
+      sessionId.value = res.sessionId;
+      mode.value = 'daily';
+      puzzleNumber.value = res.puzzleNumber;
+      history.value = res.history.map(moveToRow);
+      // Rebuild discovered points from any prior val moves.
+      discoveredPoints.value = res.history
+        .filter((m) => m.command === 'val' && m.inputX !== null && Number.isFinite(Number(m.result)))
+        .map((m) => ({ x: m.inputX as number, y: Number(m.result) }));
+      turnsRemaining.value = res.turnsRemaining;
+      gameStatus.value = deriveStatus(res.history, res.turnsRemaining);
     } finally {
       loading.value = false;
     }
@@ -108,7 +139,9 @@ export const useGameStore = defineStore('game', () => {
     discoveredPoints,
     inputError,
     loading,
+    puzzleNumber,
     startFreePlay,
+    startDaily,
     submitClue,
     moveToRow,
   };

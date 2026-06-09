@@ -12,14 +12,14 @@ import SubmitButton from '@/components/input/SubmitButton.vue';
 import type { GridRow } from '@/components/game/rowState';
 
 const store = useGameStore();
-const { history, turnsRemaining, gameStatus, secret, inputError } = storeToRefs(store);
+const { history, turnsRemaining, gameStatus, secret, inputError, mode, puzzleNumber } =
+  storeToRefs(store);
 
 const command = ref<Command>('val');
 const inputValue = ref('');
 
 const isOver = computed(() => gameStatus.value === 'won' || gameStatus.value === 'lost');
 
-// Display rows = submitted moves, plus an "awaiting" slot while the game is live.
 const displayRows = computed<GridRow[]>(() => {
   const rows = [...history.value];
   if (gameStatus.value === 'active' && rows.length < TOTAL_TURNS) {
@@ -28,25 +28,43 @@ const displayRows = computed<GridRow[]>(() => {
   return rows;
 });
 
+function resetInput(): void {
+  command.value = 'val';
+  inputValue.value = '';
+}
+
 async function onSubmit(): Promise<void> {
   await store.submitClue(command.value, inputValue.value);
   if (!store.inputError) inputValue.value = '';
 }
 
-async function newGame(): Promise<void> {
-  command.value = 'val';
-  inputValue.value = '';
+async function selectDaily(): Promise<void> {
+  resetInput();
+  await store.startDaily();
+}
+
+async function selectFreePlay(): Promise<void> {
+  resetInput();
   await store.startFreePlay();
 }
 
 onMounted(() => {
-  void store.startFreePlay();
+  void store.startDaily();
 });
 </script>
 
 <template>
   <main class="game-container">
     <AppHeader />
+
+    <div class="mode-tabs">
+      <button class="mode-tab" :class="{ active: mode === 'daily' }" @click="selectDaily">
+        Daily<span v-if="mode === 'daily' && puzzleNumber"> #{{ puzzleNumber }}</span>
+      </button>
+      <button class="mode-tab" :class="{ active: mode === 'freeplay' }" @click="selectFreePlay">
+        Free Play
+      </button>
+    </div>
 
     <GameGrid :rows="displayRows" />
 
@@ -66,10 +84,37 @@ onMounted(() => {
       <template v-else>
         <div class="status-bar" style="font-size: 1rem; color: var(--color-text)">
           {{ gameStatus === 'won' ? '🎯 Solved it!' : 'Out of turns.' }}
-          <span class="result-value">f(x) = {{ secret }}</span>
+          <span v-if="secret" class="result-value">f(x) = {{ secret }}</span>
         </div>
-        <button class="btn-submit" @click="newGame">New Game</button>
+        <button v-if="mode === 'freeplay'" class="btn-submit" @click="selectFreePlay">New Game</button>
+        <button v-else class="btn-submit" @click="selectFreePlay">Play Free Play</button>
       </template>
     </div>
   </main>
 </template>
+
+<style scoped>
+.mode-tabs {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 10px;
+}
+.mode-tab {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  min-height: 32px;
+  padding: 0 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.mode-tab.active {
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
+  background: var(--color-card);
+}
+</style>

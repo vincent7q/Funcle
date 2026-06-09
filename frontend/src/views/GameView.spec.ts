@@ -6,7 +6,9 @@ import GameView from './GameView.vue';
 vi.mock('@/api/client', () => ({
   api: {
     newSession: vi.fn().mockResolvedValue({ sessionId: 's1', turnsRemaining: 6 }),
-    getDaily: vi.fn(),
+    getDaily: vi
+      .fn()
+      .mockResolvedValue({ sessionId: 'd1', turnsRemaining: 6, puzzleNumber: 1, history: [] }),
     val: vi.fn(),
     isInc: vi.fn(),
     target: vi.fn(),
@@ -40,5 +42,13 @@ describe('GameView (wired to the store)', () => {
     const wrapper = await mountView();
     expect(wrapper.find('#action-select').exists()).toBe(true);
     expect(wrapper.find('.btn-submit').text()).toBe('Submit Clue');
+  });
+
+  it('defaults to Daily mode with the Daily tab active', async () => {
+    const wrapper = await mountView();
+    const tabs = wrapper.findAll('.mode-tab');
+    expect(tabs).toHaveLength(2);
+    const daily = tabs.find((t) => t.text().startsWith('Daily'));
+    expect(daily?.classes()).toContain('active');
   });
 });
