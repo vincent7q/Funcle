@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+backend/dist/
+frontend/dist/
+
+# Environment / secrets
+.env
+.env.local
+*.local
+
+# Database (runtime data)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+backend/data/
+
+# Test / coverage
+coverage/
+.vitest/
+
+# Worktrees (if ever used)
+.worktrees/
+worktrees/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
