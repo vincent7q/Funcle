@@ -40,16 +40,18 @@ The spec asks that these answers be recorded in `math/rules/math_rules.md` once 
 These are anti-cheat and correctness invariants from the spec — do not violate them:
 
 - **The secret polynomial must never leave the backend** during active play. It is stored only in the DB (as a JSON coefficient array, highest degree first, e.g. `[1,0,-4]` = `x² − 4`) and is only included in an API response on win/loss (the `secret` field of the `target` response).
-- **The polynomial graph (`PolynomialChart.vue`) renders the full curve only after the game ends.** During play it shows only discovered `val` points as scatter dots — drawing the curve early would give away the answer.
+- **The polynomial graph (`PolynomialChart.vue`) is hidden during play and revealed only when the game ends** (curve + discovered `val` points) — showing it earlier would give away the answer. It's client-side (negligible server cost) and gated by a `showGraph` setting (default on, persisted in `localStorage`). See spec §7.4.
 - **History grid rows are immutable** once filled.
 - **Daily mode** serves the same polynomial to all players for a given calendar date. Puzzles come from a **curated bank** authored ahead of time via a password-protected admin page (`/admin`, gated by the `ADMIN_PASSWORD` env var — a single operator credential, not a player account); if no puzzle is scheduled for a date, the backend **deterministically generates** one from the date as a fallback (`source='generated'`). See spec §3.3 and the `/api/admin/*` routes in §8. **Free Play** generates a new random polynomial per session. Stats are tracked separately per mode.
 
 ## Build Order (spec §14)
 
-The spec prescribes this sequence to unblock work early: DB schema + `db.js` → Express server + route stubs → frontend scaffold (static UI) → Pinia store + API wiring → Chart.js panel with mock data → math engine (`polynomial.js`, `derivative.js`, `parser.js`) → full game-loop integration → auth/stats → share feature → tests.
+The spec prescribes this sequence to unblock work early: DB schema + `db.js` → Express server + route stubs → frontend scaffold (static main-game-screen UI, no graph) → Pinia store + API wiring → math engine (`polynomial`, `derivative`, `parser`) → full game-loop integration → daily puzzle pipeline + admin page → **end-of-game graph reveal** (`PolynomialChart.vue`, built after the game loop since it needs the revealed secret) → auth → secondary screens (Stats/Help/Settings) → share → tests.
 
 The math engine in `backend/engine/` is pure logic (no DB/HTTP) and should be unit-tested — write engine tests once the engine files exist.
 
 ## Design Reference
 
-`design/funcle_ui_blueprint.html` is a high-fidelity HTML mockup of the target UI; `design/convert_css.txt` and `design/assets/` hold palette/style references. Use these plus the dark-theme color tokens in spec §7.2 when building Vue components.
+`design/funcle_ui_blueprint.html` is a **CSS/styling reference for the main game screen only** (header, 6-row clue grid, input controls) — it does **not** cover the graph, Stats, Help, or Settings screens. Build those separately but with the same palette/tokens. `design/convert_css.txt` asks that the `state-*` row classes drive `GameRow.vue` rendering. Use the exact palette in spec §7.2 (note the new `--color-card` `#1a1a1b`).
+
+**Responsiveness:** the game must play well on **mobile phones and tablets (iPad)** — mobile-first, centered single-column card that scales gracefully, with ~44px touch targets. See spec §7.6–§7.7.

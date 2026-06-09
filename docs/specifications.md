@@ -180,63 +180,99 @@ Rules:
 
 ## 7. UI Specification
 
-### 7.1 Layout (two-panel, mobile-first)
+> **Scope of the blueprint:** `design/funcle_ui_blueprint.html` is a **CSS / styling reference for the main game screen only** (header, the 6-row clue grid, and the input controls). It intentionally does **not** cover the polynomial graph, the Stats screen, the Help screen, or the Settings panel — those are separate screens/overlays that should be built **consistently** with the blueprint's palette and tokens (§7.2), but their layout is defined here in §7, not in the blueprint.
+
+### 7.1 Layout (single-column, mobile-first, tablet-friendly)
+The main game screen matches the blueprint: a centered single column with **header (top) → 6-row clue grid (center) → input controls (bottom)**. The polynomial graph is **not** shown during play (see §7.4) — it is revealed only after the game ends.
 
 ```
 +-----------------------------------------------+
 |              F U N C L E                      |
+|       The Function Detective Puzzle           |
 |           [?] [Stats] [⚙]                    |
 +-----------------------------------------------+
 |                                               |
 |  [--- History Grid (6 rows) ---]              |
-|  R1 🟩  val 0          |  -4                 |
-|  R2 🟨  is_inc 1       |  Increasing         |
-|  R3 ⬜  ...                                  |
+|  R1 🟩  VAL 0          |  -4                 |
+|  R2 🟨  IS_INC 1       |  Increasing         |
+|  R3 ·   Awaiting clue entry…                  |
+|  R4 ·   (empty, dashed)                        |
 |  ...                                          |
 |                                               |
-|  [--- Polynomial Graph (Chart.js) ---]        |
-|  Live curve updates as val points accumulate  |
-|                                               |
 +-----------------------------------------------+
-|  Select Action:  [val ▼]                      |
+|  Select Action:  [val (Evaluate Point) ▼]     |
 |  Input x:        [  2  ]                      |
 |  [         SUBMIT CLUE         ]              |
-|  Turns remaining: 4 / 6                       |
+|  Remaining Guess Bullets: 4 / 6               |
 +-----------------------------------------------+
+
+   On game end → reveal the plotted curve y = f(x)
+   (end-game overlay / panel; see §7.4)
 ```
 
 ### 7.2 Color Palette (Dark Theme)
 
-| Token | Hex | Usage |
-|---|---|---|
-| `--color-bg` | `#121213` | Canvas / page background |
-| `--color-success` | `#538d4e` | `val` row marker, win state |
-| `--color-directional` | `#b59f3b` | `is_inc` row marker |
-| `--color-target-win` | `#538d4e` | Correct `target` row |
-| `--color-target-fail` | `#3a3a3c` | Incorrect `target` row |
-| `--color-empty` | `#3a3a3c` | Empty/unused row |
-| `--color-text` | `#ffffff` | Primary text |
-| `--color-text-muted` | `#818384` | Secondary text |
+The canonical values live in `design/funcle_ui_blueprint.html` — use these exact hexes. (The `Blueprint var` column gives the CSS variable names already used in that file.)
+
+| Token | Blueprint var | Hex / value | Usage |
+|---|---|---|---|
+| `--color-bg` | `--bg-color` | `#121213` | Page / canvas background |
+| `--color-card` | `--card-bg` | `#1a1a1b` | Grid-row & input background (**new** — was missing) |
+| `--color-border` | `--border-color` | `#3a3a3c` | Default row/input borders, empty rows |
+| `--color-success` | `--color-val` | `#538d4e` | `val` marker, win state, submit button |
+| `--color-success-hover` | — | `#43723f` | Submit button hover |
+| `--color-directional` | `--color-inc` | `#b59f3b` | `is_inc` marker |
+| `--color-text` | `--text-color` | `#ffffff` | Primary text |
+| `--color-text-muted` | `--text-muted` | `#818384` | Secondary text, labels, placeholders |
+
+**Row-state fills** (translucent, layered over `--color-card`):
+- `val` row → border `#538d4e`, fill `rgba(83, 141, 78, 0.15)`, filled green badge.
+- `is_inc` row → border `#b59f3b`, fill `rgba(181, 159, 59, 0.15)`, filled yellow badge.
+- `target` win row → green (`#538d4e`); fail row → muted gray (`#3a3a3c`).
+- empty row → dashed border, `opacity: 0.3`.
 
 ### 7.3 History Grid Rows
-- 6 fixed rows. Empty rows show a blank placeholder.
-- When a command is submitted, it fills the next empty row (top to bottom).
-- Each row displays: colored marker | command label + x value | result value.
-- Rows are **immutable** once filled — they never change.
+Structure and states follow `design/funcle_ui_blueprint.html`. Per `design/convert_css.txt`, the `state-*` CSS classes should drive how `GameRow.vue` re-renders dynamically based on command type.
 
-### 7.4 Polynomial Graph Panel
-- Uses Chart.js line chart.
-- Renders the curve $y = f(x)$ **only after the game ends** (win or lose) — to prevent the graph from giving away the answer mid-game.
-- During the game: shows only the **discovered points** as scatter dots on a blank coordinate plane.
-- X-axis range: dynamic, centered around submitted x-values.
-- On game end: the full polynomial curve is revealed, connecting all scatter points.
+- **6 fixed rows**, vertical stack, ~8px gap. Each row: card background, 2px border, 6px radius, ~52px tall, padding `0 16px`, with a `0.3s` transition for the fill-in animation.
+- **Row anatomy:** left = an uppercase **badge** pill showing command + x (e.g. `VAL 0`, `IS_INC 1`); right = the **result value** in monospace (`Courier New`, ~1.2rem).
+- **Row states (CSS classes):**
+  - `state-val` — green border + translucent green fill + green badge.
+  - `state-inc` — yellow border + translucent yellow fill + yellow badge.
+  - `target` rows — win = green, fail = muted gray.
+  - **active / awaiting row** — default solid border, a small gray dot, and italic muted placeholder text "*Awaiting clue entry…*", empty result.
+  - `state-empty` — dashed border, `opacity: 0.3`, just a small gray dot.
+- When a command is submitted it fills the next empty row, top to bottom. Rows are **immutable** once filled.
+
+### 7.4 Polynomial Graph (end-of-game reveal)
+- **Hidden during play, revealed only when the game ends** (win or lose) — this both preserves the puzzle (the curve would give away the answer) and keeps the play screen uncluttered on small screens.
+- On game end, render the full curve $y = f(x)$ with a Chart.js line chart, **marking the player's discovered `val` points** on it. X-axis range centered around the submitted x-values. Shown on the end-game overlay / a panel that expands beneath the grid.
+- **Client-side & lightweight:** Chart.js renders in the browser from the coefficients the backend returns at game end (the `secret`), so there is **no meaningful server cost** — the toggle below exists for user preference and small-screen comfort, not server load.
+- **Show-graph toggle (parameter):** a setting (default **ON**) lets the player turn the end-game graph off. Exposed in the Settings (⚙) panel and persisted in `localStorage`; it can also be disabled globally via a build/runtime config flag if ever needed. When off, the end screen simply omits the chart.
+- **Responsive:** the chart must size fluidly to the container so it reads well on both phone and tablet (iPad) widths (see §7.6).
 
 ### 7.5 Input Panel
-- **Command dropdown:** `val` / `is_inc` / `target` — never allow free-text command entry.
-- **x-value input:** A number field for `val` and `is_inc`. Accepts both decimals and integers (`type="number" step="any"`). Invalid input returns `"error"` and prompts the player to try again (the turn is not consumed on an invalid input — see §8 note).
+A bottom control block (separated by a top border), laid out per the blueprint: a row with the action dropdown (flex-grow) beside a narrow x input (~100px), then a full-width submit button, then a status line.
+
+- **Command dropdown:** `val` / `is_inc` / `target` — never allow free-text command entry. Use descriptive option labels from the blueprint: `val (Evaluate Point)`, `is_inc (Check Direction)`, `target (Submit Final Guess)`.
+- **x-value input:** A narrow number field for `val` and `is_inc`. Accepts both decimals and integers (`type="number" step="any"`, placeholder e.g. `e.g. 5`). Invalid input returns `"error"` and prompts the player to retry (the turn is not consumed on an invalid input — see §8 note).
 - **Expression input:** A text field that replaces the x-value field when `target` is selected.
-- **Submit button:** Disabled when turns = 0 or game is won/lost.
-- **Turns counter:** Always visible.
+- **Submit button:** Full-width, green (`--color-success`, hover `--color-success-hover`), uppercase label "SUBMIT CLUE", ~42px tall. Disabled when turns = 0 or game is won/lost.
+- **Status bar:** Centered, muted, always visible — blueprint copy "Remaining Guess Bullets: N / 6" (a.k.a. turns remaining).
+
+### 7.6 Layout, Container & Typography
+Per `design/funcle_ui_blueprint.html`:
+- **Container:** mobile-first, centered; `max-width 450px`, `max-height 750px`, full-height, 1px border, `15px` padding. Vertical flex with `space-between`: **header (top) → grid (center, `flex-grow`, vertically centered) → controls (bottom)**.
+- **Header:** centered, bottom border. Title `FUNCLE` (h1, ~2.2rem, `letter-spacing: 3px`, bold) and a muted **subtitle** "*The Function Detective Puzzle*" (~0.8rem). Three action icons sit in the header: **`[?]` Help** (how-to-play), **`[Stats]`** (streaks + win distribution, §7.7), and **`[⚙]` Settings** (incl. the show-graph toggle, §7.4).
+- **Fonts:** UI in `Segoe UI, Tahoma, Geneva, Verdana, sans-serif`; result values and other numeric output in `Courier New` monospace.
+
+### 7.7 Responsiveness & Secondary Screens
+- **Target devices:** the game must look and play well on **mobile phones and tablets (iPad)**. Mobile-first; the centered single-column card scales up gracefully on larger/tablet widths (the `max-width` keeps line lengths comfortable, the card stays centered on the dark canvas). Use `min-height: 100vh`/dynamic viewport units so it fills the screen, and fluid sizing so it adapts to portrait and landscape.
+- **Touch-friendly:** interactive targets (dropdown, input, submit, header icons) should be at least ~44px tall for comfortable tapping.
+- **Secondary screens (Help / Stats / Settings):** presented as **overlays/modals** above the game, styled with the same palette and tokens (§7.2). The blueprint does not cover these — design them consistently here:
+  - **Help** — short how-to-play: the three commands, the 6-turn limit, and the win condition.
+  - **Stats** — games played, win %, current/max streak, and the win-distribution bar chart (data from `GET /api/stats/:userId`, §8).
+  - **Settings** — the show-graph toggle (§7.4) and any future preferences.
 
 ---
 
@@ -402,13 +438,17 @@ CREATE TABLE user_stats (
 | `AppHeader.vue` | `components/layout/` | Title bar, Help / Stats / Settings buttons |
 | `GameGrid.vue` | `components/game/` | Container for the 6 history rows |
 | `GameRow.vue` | `components/game/` | Single row: marker + command label + result |
-| `WinScreen.vue` | `components/game/` | Win/lose overlay modal with share button |
-| `PolynomialChart.vue` | `components/graph/` | Chart.js scatter+line chart component |
+| `WinScreen.vue` | `components/game/` | Win/lose overlay modal: result, share button, and the end-game graph (§7.4) |
+| `PolynomialChart.vue` | `components/graph/` | Chart.js curve + discovered `val` points; rendered only on game end, hidden when the show-graph setting is off (§7.4) |
 | `CommandSelector.vue` | `components/input/` | Dropdown: val / is_inc / target |
 | `ValueInput.vue` | `components/input/` | Number input (val/is_inc) or text input (target) — switches based on selected command |
 | `SubmitButton.vue` | `components/input/` | SUBMIT CLUE button, disabled on game end |
+| `StatsModal.vue` | `components/overlay/` | Stats screen (§7.7): games played, win %, streaks, win-distribution chart (from `GET /api/stats/:userId`) |
+| `HelpModal.vue` | `components/overlay/` | How-to-play screen (§7.7) |
+| `SettingsModal.vue` | `components/overlay/` | Settings screen (§7.7): show-graph toggle + future prefs |
 | `AdminView.vue` | `frontend/src/views/` | Password-gated daily-puzzle scheduling page (§3.3): login, upcoming-dates table, add/edit form. Routed at `/admin`, not linked from the game UI. |
 | `gameStore.js` | `frontend/src/stores/` | Pinia store: sessionId, history[], turnsRemaining, gameStatus, mode |
+| `settingsStore.js` | `frontend/src/stores/` | Pinia store for client prefs (e.g. `showGraph`), persisted to `localStorage` |
 | `adminStore.js` | `frontend/src/stores/` | Pinia store for admin session: token, scheduled-puzzle list, form state |
 
 ### Pinia Store Shape (`gameStore.js`)
@@ -506,15 +546,16 @@ Build in this sequence to unblock work as early as possible:
 
 1. **DB schema + `backend/db/db.js`** — No math dependency, enables all other backend work.
 2. **`backend/server.js` + route stubs** — Skeleton API with placeholder responses.
-3. **Frontend scaffold** — Vite + Vue 3 + Tailwind setup, static UI layout, GameGrid with hardcoded rows.
+3. **Frontend scaffold** — Vite + Vue 3 + Tailwind setup, static main-game-screen layout per the blueprint (header, GameGrid with hardcoded rows, input controls). No graph here.
 4. **Pinia store + API wiring** — Connect frontend to backend stubs.
-5. **Chart.js graph panel** — `PolynomialChart.vue` with mock data.
-6. **`polynomial.js` + `derivative.js` + `parser.js`** — implement per the confirmed math rules in §13 (Q1–Q5).
-7. **Full game loop integration** — Wire math engine to routes, replace stubs.
-8. **Daily puzzle pipeline** — Deterministic date-seeded fallback generator in `polynomial.js`, then the admin scheduling page (`adminRoute.js` + `adminAuth.js` + `AdminView.vue`) so the mathematician can queue puzzles (§3.3).
+5. **`polynomial.js` + `derivative.js` + `parser.js`** — implement per the confirmed math rules in §13 (Q1–Q5).
+6. **Full game loop integration** — Wire math engine to routes, replace stubs; game reaches `won`/`lost` and the backend reveals `secret`.
+7. **Daily puzzle pipeline** — Deterministic date-seeded fallback generator in `polynomial.js`, then the admin scheduling page (`adminRoute.js` + `adminAuth.js` + `AdminView.vue`) so the mathematician can queue puzzles (§3.3).
+8. **End-of-game graph reveal** — `PolynomialChart.vue` on the win/lose screen, plotting the revealed `secret` + discovered `val` points, gated by the `showGraph` setting (§7.4). Built *after* the game loop because it depends on the end state and the revealed secret — not earlier with mock data.
 9. **Auth system** — Optional login, user stats.
-10. **Share feature** — Clipboard emoji grid.
-11. **Tests** — Write Vitest unit tests for the engine against the confirmed rules in §13, plus route and component tests (see §2.1). (Write engine tests alongside step 6, not only at the end.)
+10. **Secondary screens** — Stats, Help, Settings overlays (§7.7), incl. the show-graph toggle in Settings.
+11. **Share feature** — Clipboard emoji grid.
+12. **Tests** — Write Vitest unit tests for the engine against the confirmed rules in §13, plus route and component tests (see §2.1). (Write engine tests alongside step 5, not only at the end.)
 
 > **Filename note:** the `.js` names in §10–§14 are illustrative — under the TypeScript decision (§2) source files are `.ts` (and `.vue` with `lang="ts"`).
 
