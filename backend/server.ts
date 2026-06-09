@@ -8,16 +8,17 @@ import cors from 'cors';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { openDb, type Db } from './db/db';
+import { getAdminConfig, type AdminConfig } from './config';
 import { createSessionRouter } from './routes/sessionRoute';
 import { createGameRouter } from './routes/gameRoute';
 import { statsRoute } from './routes/statsRoute';
-import { adminRoute } from './routes/adminRoute';
+import { createAdminRouter } from './routes/adminRoute';
 
 /**
  * Builds the Express application around a database connection. The DB is
  * injected so tests can pass an isolated in-memory database. (spec §8/§11)
  */
-export function createApp(db: Db): Express {
+export function createApp(db: Db, adminConfig: AdminConfig = getAdminConfig()): Express {
   const app = express();
 
   app.use(cors());
@@ -33,7 +34,7 @@ export function createApp(db: Db): Express {
   app.use('/api', createSessionRouter(db));
   app.use('/api/game', createGameRouter(db));
   app.use('/api/stats', statsRoute);
-  app.use('/api/admin', adminRoute);
+  app.use('/api/admin', createAdminRouter(db, adminConfig));
 
   // Central error handler — last middleware. Returns JSON, never an HTML page.
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
