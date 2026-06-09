@@ -81,6 +81,7 @@ describe('gameStore', () => {
       gameStatus: 'won',
       turnsUsed: 1,
       secret: 'x^2 - 4',
+      secretCoeffs: [1, 0, -4],
     });
     await store.submitClue('target', '(x-2)(x+2)');
     expect(store.gameStatus).toBe('won');
@@ -166,6 +167,7 @@ describe('gameStore', () => {
       gameStatus: 'won',
       turnsUsed: 1,
       secret: 'x',
+      secretCoeffs: [1, 0],
     });
     await store.submitClue('target', 'x');
     await store.submitClue('val', '1');

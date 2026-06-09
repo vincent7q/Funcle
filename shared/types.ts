@@ -70,6 +70,8 @@ export interface ValResponse {
   gameStatus: GameStatus;
   /** Revealed only if this command exhausted the last turn (game now lost). */
   secret?: string;
+  /** Secret coefficients for the end-game graph (§7.4); present with `secret`. */
+  secretCoeffs?: Coefficients;
 }
 
 export interface IsIncResponse {
@@ -78,6 +80,8 @@ export interface IsIncResponse {
   gameStatus: GameStatus;
   /** Revealed only if this command exhausted the last turn (game now lost). */
   secret?: string;
+  /** Secret coefficients for the end-game graph (§7.4); present with `secret`. */
+  secretCoeffs?: Coefficients;
 }
 
 /** A correct guess: the secret is revealed only now (spec §8 /game/target). */
@@ -86,6 +90,8 @@ export interface TargetWinResponse {
   gameStatus: 'won';
   turnsUsed: number;
   secret: string;
+  /** Secret coefficients for the end-game graph (§7.4). */
+  secretCoeffs: Coefficients;
 }
 
 /** A wrong guess: secret revealed only when the game is now `lost`. */
@@ -95,6 +101,8 @@ export interface TargetWrongResponse {
   turnsRemaining: number;
   /** Present only when the game just ended in a loss. */
   secret?: string;
+  /** Present with `secret` when the game just ended in a loss (§7.4 graph). */
+  secretCoeffs?: Coefficients;
 }
 
 export type TargetResponse = TargetWinResponse | TargetWrongResponse;

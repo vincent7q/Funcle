@@ -121,6 +121,7 @@ export function createGameRouter(db: Db): Router {
         gameStatus: 'won',
         turnsUsed: turn,
         secret: formatPolynomial(coeffs),
+        secretCoeffs: coeffs,
       };
       res.json(body);
       return;
@@ -132,7 +133,7 @@ export function createGameRouter(db: Db): Router {
       correct: false,
       gameStatus: lost ? 'lost' : 'active',
       turnsRemaining: TOTAL_TURNS - turn,
-      ...(lost ? { secret: formatPolynomial(coeffs) } : {}),
+      ...(lost ? { secret: formatPolynomial(coeffs), secretCoeffs: coeffs } : {}),
     };
     res.json(body);
   });
@@ -169,7 +170,9 @@ function commitClue(
     gameStatus: lost ? ('lost' as const) : ('active' as const),
   } as ValResponse | IsIncResponse;
   if (lost) {
-    body.secret = formatPolynomial(JSON.parse(session.coefficients) as Coefficients);
+    const coeffs = JSON.parse(session.coefficients) as Coefficients;
+    body.secret = formatPolynomial(coeffs);
+    body.secretCoeffs = coeffs;
   }
   return body;
 }

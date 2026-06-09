@@ -4,17 +4,22 @@ import { storeToRefs } from 'pinia';
 import type { Command } from '@shared/types';
 import { TOTAL_TURNS } from '@shared/types';
 import { useGameStore } from '@/stores/gameStore';
+import { useSettingsStore } from '@/stores/settingsStore';
 import AppHeader from '@/components/layout/AppHeader.vue';
 import GameGrid from '@/components/game/GameGrid.vue';
 import CommandSelector from '@/components/input/CommandSelector.vue';
 import ValueInput from '@/components/input/ValueInput.vue';
 import SubmitButton from '@/components/input/SubmitButton.vue';
 import WinScreen from '@/components/game/WinScreen.vue';
+import PolynomialChart from '@/components/graph/PolynomialChart.vue';
 import type { GridRow } from '@/components/game/rowState';
 
 const store = useGameStore();
-const { history, turnsRemaining, gameStatus, secret, inputError, mode, puzzleNumber } =
+const { history, turnsRemaining, gameStatus, secret, secretCoeffs, discoveredPoints, inputError, mode, puzzleNumber } =
   storeToRefs(store);
+
+const settings = useSettingsStore();
+const { showGraph } = storeToRefs(settings);
 
 const command = ref<Command>('val');
 const inputValue = ref('');
@@ -91,7 +96,13 @@ onMounted(() => {
       :mode="mode"
       :puzzle-number="puzzleNumber"
       @play-again="selectFreePlay"
-    />
+    >
+      <PolynomialChart
+        v-if="showGraph && secretCoeffs"
+        :coeffs="secretCoeffs"
+        :discovered="discoveredPoints"
+      />
+    </WinScreen>
   </main>
 </template>
 

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import type { Command, GameMode, GameStatus, MoveRecord } from '@shared/types';
+import type { Coefficients, Command, GameMode, GameStatus, MoveRecord } from '@shared/types';
 import { TOTAL_TURNS } from '@shared/types';
 import { api } from '@/api/client';
 import { getAnonId } from '@/lib/anonId';
@@ -34,6 +34,7 @@ export const useGameStore = defineStore('game', () => {
   const turnsRemaining = ref(TOTAL_TURNS);
   const gameStatus = ref<Status>('idle');
   const secret = ref<string | null>(null);
+  const secretCoeffs = ref<Coefficients | null>(null);
   const discoveredPoints = ref<{ x: number; y: number }[]>([]);
   const inputError = ref<string | null>(null);
   const loading = ref(false);
@@ -43,6 +44,7 @@ export const useGameStore = defineStore('game', () => {
     history.value = [];
     discoveredPoints.value = [];
     secret.value = null;
+    secretCoeffs.value = null;
     inputError.value = null;
   }
 
@@ -97,12 +99,16 @@ export const useGameStore = defineStore('game', () => {
         history.value.push({ state: 'target-win', label: 'TARGET', result: '🎯' });
         gameStatus.value = 'won';
         secret.value = res.secret;
+        secretCoeffs.value = res.secretCoeffs;
         turnsRemaining.value = TOTAL_TURNS - res.turnsUsed;
       } else {
         history.value.push({ state: 'target-fail', label: 'TARGET', result: '✗' });
         gameStatus.value = res.gameStatus;
         turnsRemaining.value = res.turnsRemaining;
-        if (res.gameStatus === 'lost' && res.secret) secret.value = res.secret;
+        if (res.gameStatus === 'lost' && res.secret) {
+          secret.value = res.secret;
+          if (res.secretCoeffs) secretCoeffs.value = res.secretCoeffs;
+        }
       }
       return;
     }
@@ -126,7 +132,10 @@ export const useGameStore = defineStore('game', () => {
     }
     turnsRemaining.value = res.turnsRemaining;
     gameStatus.value = res.gameStatus;
-    if (res.gameStatus === 'lost' && res.secret) secret.value = res.secret;
+    if (res.gameStatus === 'lost' && res.secret) {
+      secret.value = res.secret;
+      if (res.secretCoeffs) secretCoeffs.value = res.secretCoeffs;
+    }
   }
 
   return {
@@ -140,6 +149,7 @@ export const useGameStore = defineStore('game', () => {
     inputError,
     loading,
     puzzleNumber,
+    secretCoeffs,
     startFreePlay,
     startDaily,
     submitClue,

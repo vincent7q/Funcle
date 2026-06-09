@@ -81,6 +81,7 @@ describe('POST /api/game/target', () => {
     expect(res.body.gameStatus).toBe('won');
     expect(res.body.turnsUsed).toBe(1);
     expect(res.body.secret).toBe('x^2 - 4');
+    expect(res.body.secretCoeffs).toEqual([1, 0, -4]);
   });
 
   it('a wrong guess consumes a turn and keeps the secret hidden while active', async () => {
