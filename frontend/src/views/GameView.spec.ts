@@ -51,4 +51,11 @@ describe('GameView (wired to the store)', () => {
     const daily = tabs.find((t) => t.text().startsWith('Daily'));
     expect(daily?.classes()).toContain('active');
   });
+
+  it('opens the Settings modal from the header', async () => {
+    const wrapper = await mountView();
+    expect(wrapper.find('.setting-row').exists()).toBe(false);
+    await wrapper.find('[aria-label="Settings"]').trigger('click');
+    expect(wrapper.find('.setting-row').exists()).toBe(true);
+  });
 });

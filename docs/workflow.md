@@ -16,7 +16,7 @@
 
 ## Status (updated 2026-06-10)
 
-**Playable end-to-end with the full end-of-game experience** (Vue UI → Vite proxy → Express → SQLite → math engine): Free Play + Daily, win/lose overlay, Chart.js graph reveal, and Wordle-style share. Anti-cheat invariants enforced (the secret never leaves the backend until the game ends). The daily-puzzle **admin** (`/admin`) is complete: bcrypt+JWT login (rate-limited), puzzle CRUD with §13 expression validation, future-only editing. Backend: **98 Vitest tests**. Frontend: **43 Vitest tests**. `tsc`/`vue-tsc` + ESLint clean on both; both build.
+**Playable end-to-end with the full end-of-game experience** (Vue UI → Vite proxy → Express → SQLite → math engine): Free Play + Daily, win/lose overlay, Chart.js graph reveal, and Wordle-style share. Anti-cheat invariants enforced (the secret never leaves the backend until the game ends). The daily-puzzle **admin** (`/admin`) is complete (bcrypt+JWT login, rate-limited, puzzle CRUD with §13 validation, future-only editing), and so are **accounts, stats, and the Help/Stats/Settings overlays** (optional login, per-identity stats with streaks + distribution, show-graph toggle). Backend: **108 Vitest tests**. Frontend: **55 Vitest tests**. `tsc`/`vue-tsc` + ESLint clean on both; both build.
 
 | Task | Status | Commit |
 |------|--------|--------|
@@ -38,11 +38,14 @@
 | 5.3 Share feature (emoji grid) | ✅ | `f29a1a6` |
 | 6.1 Admin auth (bcrypt + JWT + rate limit) | ✅ | `6ea14b6` |
 | 6.2 Admin puzzle CRUD + expression validation | ✅ | `159aa42` |
-| 6.3 Admin page UI (`/admin`) | ✅ | (this commit) |
+| 6.3 Admin page UI (`/admin`) | ✅ | `3b96b05` |
+| 7.1 Optional accounts (bcrypt) | ✅ | `a3e031c` |
+| 7.2 Stats tracking + `/stats/:userId` | ✅ | `74edb81` |
+| 7.3 Help / Stats / Settings overlays | ✅ | (this commit) |
 
 **3.3 note:** session + game routes already validate via zod (400 on bad bodies; `val`/`is_inc` return `"error"` for invalid `x` per §13 Q4). Finish 3.3 (admin/stats validation + 400 tests) when those routes are implemented in Phases 6/7.
 
-**Next:** **Phase 7** users, stats & secondary screens — 7.1 optional accounts → 7.2 stats tracking + `GET /api/stats/:userId` → 7.3 Help/Stats/Settings overlays (Settings hosts the show-graph toggle, wired to settingsStore). Then **Phase 8** responsiveness/touch pass, coverage sweep, deploy. Phases 6 (admin) and 7 (users/stats/secondary screens) follow; 3.3 finishes when admin/stats land. To run locally: `cd backend && npm run dev` (port 3000) + `cd frontend && npm run dev` (Vite proxies `/api` → 3000).
+**Next:** **Phase 8** — 8.1 responsive/touch pass (mobile + iPad portrait/landscape, ~44px targets, fluid graph), 8.2 test & coverage sweep, 8.3 deployment (container build, persistent SQLite volume, env/secrets, optional single-origin serving). This is the final polish/ship phase; the game + admin are fully functional. Phases 6 (admin) and 7 (users/stats/secondary screens) follow; 3.3 finishes when admin/stats land. To run locally: `cd backend && npm run dev` (port 3000) + `cd frontend && npm run dev` (Vite proxies `/api` → 3000).
 
 **Environment note:** frontend is pinned to a Vite 6 / Vitest 2 stack because the dev machine runs Node 20.17 (the current Vite 8/rolldown toolchain needs ≥20.19). See `CLAUDE.md` and project memory before bumping frontend deps. Branch `feat/scaffold` is **not yet pushed** to origin.
 

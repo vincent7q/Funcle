@@ -12,6 +12,9 @@ import ValueInput from '@/components/input/ValueInput.vue';
 import SubmitButton from '@/components/input/SubmitButton.vue';
 import WinScreen from '@/components/game/WinScreen.vue';
 import PolynomialChart from '@/components/graph/PolynomialChart.vue';
+import HelpModal from '@/components/overlay/HelpModal.vue';
+import StatsModal from '@/components/overlay/StatsModal.vue';
+import SettingsModal from '@/components/overlay/SettingsModal.vue';
 import type { GridRow } from '@/components/game/rowState';
 
 const store = useGameStore();
@@ -23,6 +26,7 @@ const { showGraph } = storeToRefs(settings);
 
 const command = ref<Command>('val');
 const inputValue = ref('');
+const activeModal = ref<'help' | 'stats' | 'settings' | null>(null);
 
 const isOver = computed(() => gameStatus.value === 'won' || gameStatus.value === 'lost');
 const endStatus = computed<'won' | 'lost'>(() => (gameStatus.value === 'won' ? 'won' : 'lost'));
@@ -63,7 +67,11 @@ onMounted(() => {
 
 <template>
   <main class="game-container">
-    <AppHeader />
+    <AppHeader
+      @help="activeModal = 'help'"
+      @stats="activeModal = 'stats'"
+      @settings="activeModal = 'settings'"
+    />
 
     <div class="mode-tabs">
       <button class="mode-tab" :class="{ active: mode === 'daily' }" @click="selectDaily">
@@ -104,6 +112,10 @@ onMounted(() => {
         :discovered="discoveredPoints"
       />
     </WinScreen>
+
+    <HelpModal v-if="activeModal === 'help'" @close="activeModal = null" />
+    <StatsModal v-if="activeModal === 'stats'" @close="activeModal = null" />
+    <SettingsModal v-if="activeModal === 'settings'" @close="activeModal = null" />
   </main>
 </template>
 
