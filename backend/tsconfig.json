@@ -12,9 +12,20 @@
     "declaration": false,
     "sourceMap": true,
     "outDir": "dist",
-    "rootDir": ".",
+    "rootDir": "..",
+    "baseUrl": ".",
+    "paths": {
+      "zod": ["./node_modules/zod"]
+    },
     "types": ["node"]
   },
-  "include": ["**/*.ts"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+  "include": ["**/*.ts", "../shared/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "../shared/**/*.test.ts",
+    "../frontend/**",
+    "../node_modules/**"
+  ]
 }

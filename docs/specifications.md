@@ -500,6 +500,7 @@ Funcle/
 │   ├── rules/             ← Validated answers to Section 13 (math rules)
 │   ├── function_sets/     ← Mathematician's draft/source puzzle lists (the live daily schedule lives in the DB, written via the admin page — §3.3)
 │   └── proofs/            ← Mathematician's working notes and derivations
+├── shared/                ← Domain types + zod API schemas shared by backend & frontend (one source of truth; backend imports schemas, frontend imports types only)
 ├── backend/
 │   ├── routes/            ← Express route handler files
 │   ├── middleware/        ← Express middleware (e.g. admin token auth)
@@ -566,6 +567,6 @@ Build in this sequence to unblock work as early as possible:
 - **Host on a container / VPS, not edge-serverless.** `better-sqlite3` is a **native module** (compiles on install) and SQLite needs a **persistent disk**. Platforms like **Fly.io, Railway, Render, or a small VPS/Droplet** are a good fit. Avoid Vercel/Netlify functions and Cloudflare Workers — their ephemeral filesystem would wipe puzzles + stats, and the native module won't run on Workers.
 - **Persistent volume:** mount the SQLite file on a persistent volume so daily puzzles, sessions, and stats survive redeploys.
 - **Environment variables:** `ADMIN_PASSWORD` (bcrypt hash), the JWT signing secret, and DB file path. Commit a `.env.example` (names only, no values); load via `dotenv` in dev and the host's secret manager in prod.
-- **Build:** frontend `vite build` → static assets; backend `tsc` → `dist/`, run the compiled JS with `node dist/server.js`.
+- **Build:** frontend `vite build` → static assets; backend `tsc` → `dist/` (the shared `shared/` sources compile alongside it, so the entry point is `node dist/backend/server.js` with `shared/` emitted to `dist/shared/`).
 - **Single-origin option:** serve the built frontend as static files from Express so frontend and API share one origin — this removes the need for `cors` and simplifies deployment to a single service. Keep `cors` only if you deploy them separately.
 - **Backups:** a periodic copy of the SQLite file (e.g. nightly) is enough insurance for this scale.
