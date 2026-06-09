@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import WinScreen from './WinScreen.vue';
 
@@ -32,5 +32,24 @@ describe('WinScreen', () => {
     const wrapper = mount(WinScreen, { props: { ...base, status: 'won' } });
     await wrapper.find('.btn-submit').trigger('click');
     expect(wrapper.emitted('playAgain')).toHaveLength(1);
+  });
+
+  it('copies the share text to the clipboard on Share', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('navigator', { clipboard: { writeText } });
+    const wrapper = mount(WinScreen, {
+      props: {
+        ...base,
+        status: 'won',
+        rows: [
+          { state: 'val', label: 'VAL 0', result: '-4' },
+          { state: 'target-win', label: 'TARGET', result: '🎯' },
+        ],
+      },
+    });
+    await wrapper.find('.btn-share').trigger('click');
+    expect(writeText).toHaveBeenCalledOnce();
+    expect(writeText.mock.calls[0]?.[0]).toContain('Funcle - Daily #42');
+    vi.unstubAllGlobals();
   });
 });

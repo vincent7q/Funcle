@@ -16,7 +16,7 @@
 
 ## Status (updated 2026-06-10)
 
-**The first vertical slice is complete — Free Play is playable end-to-end** (Vue UI → Vite proxy → Express → SQLite → math engine), with the anti-cheat invariants enforced (the secret never leaves the backend until the game ends). Backend: **78 Vitest tests**. Frontend: **17 Vitest tests**. `tsc`/`vue-tsc` + ESLint clean on both; both build.
+**Playable end-to-end with the full end-of-game experience** (Vue UI → Vite proxy → Express → SQLite → math engine): Free Play + Daily, win/lose overlay, Chart.js graph reveal, and Wordle-style share. Anti-cheat invariants enforced (the secret never leaves the backend until the game ends). Backend: **78 Vitest tests**. Frontend: **36 Vitest tests**. `tsc`/`vue-tsc` + ESLint clean on both; both build.
 
 | Task | Status | Commit |
 |------|--------|--------|
@@ -32,11 +32,14 @@
 | 3.3 Boundary validation | ◑ partial | — |
 | 4.1 Static game screen + Tailwind | ✅ | `ccb954d` |
 | 4.2 Game store + API client + free-play loop | ✅ | `b33e933` |
-| 4.3 Daily mode load/resume (UI) | ✅ | (this commit) |
+| 4.3 Daily mode load/resume (UI) | ✅ | `287e082` |
+| 5.1 Win/lose overlay screen | ✅ | `97ac623` |
+| 5.2 End-game graph (Chart.js) + settings store | ✅ | `5b60326` |
+| 5.3 Share feature (emoji grid) | ✅ | (this commit) |
 
 **3.3 note:** session + game routes already validate via zod (400 on bad bodies; `val`/`is_inc` return `"error"` for invalid `x` per §13 Q4). Finish 3.3 (admin/stats validation + 400 tests) when those routes are implemented in Phases 6/7.
 
-**Next:** **Phase 5** end-of-game experience — 5.1 WinScreen overlay → 5.2 `PolynomialChart` graph reveal (Chart.js, `showGraph` setting) → 5.3 share (emoji grid). Phases 6 (admin) and 7 (users/stats/secondary screens) follow; 3.3 finishes when admin/stats land. To run locally: `cd backend && npm run dev` (port 3000) + `cd frontend && npm run dev` (Vite proxies `/api` → 3000).
+**Next:** **Phase 6** daily-puzzle admin (6.1 admin auth → 6.2 puzzle CRUD → 6.3 admin page UI) and **Phase 7** users/stats/secondary screens (Help/Stats/Settings overlays — Settings hosts the show-graph toggle). 3.3 boundary validation finishes when admin/stats routes land. Then **Phase 8** responsiveness, coverage sweep, deploy. Phases 6 (admin) and 7 (users/stats/secondary screens) follow; 3.3 finishes when admin/stats land. To run locally: `cd backend && npm run dev` (port 3000) + `cd frontend && npm run dev` (Vite proxies `/api` → 3000).
 
 **Environment note:** frontend is pinned to a Vite 6 / Vitest 2 stack because the dev machine runs Node 20.17 (the current Vite 8/rolldown toolchain needs ≥20.19). See `CLAUDE.md` and project memory before bumping frontend deps. Branch `feat/scaffold` is **not yet pushed** to origin.
 

@@ -1,15 +1,21 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import type { GameMode } from '@shared/types';
 import { TOTAL_TURNS } from '@shared/types';
+import type { GridRow } from './rowState';
+import { buildShareText } from '@/lib/share';
 
-const props = defineProps<{
-  status: 'won' | 'lost';
-  secret: string | null;
-  turnsUsed: number;
-  mode: GameMode;
-  puzzleNumber: number | null;
-}>();
+const props = withDefaults(
+  defineProps<{
+    status: 'won' | 'lost';
+    secret: string | null;
+    turnsUsed: number;
+    mode: GameMode;
+    puzzleNumber: number | null;
+    rows?: GridRow[];
+  }>(),
+  { rows: () => [] },
+);
 
 defineEmits<{ playAgain: [] }>();
 
@@ -18,6 +24,24 @@ const actionLabel = computed(() => (props.mode === 'freeplay' ? 'New Game' : 'Pl
 const title = computed(() =>
   props.mode === 'daily' && props.puzzleNumber ? `Daily #${props.puzzleNumber}` : 'Free Play',
 );
+
+const copied = ref(false);
+async function share(): Promise<void> {
+  const text = buildShareText({
+    mode: props.mode,
+    puzzleNumber: props.puzzleNumber,
+    status: props.status,
+    turnsUsed: props.turnsUsed,
+    rows: props.rows,
+  });
+  try {
+    await navigator.clipboard.writeText(text);
+    copied.value = true;
+    setTimeout(() => (copied.value = false), 2000);
+  } catch {
+    // Clipboard unavailable (e.g. insecure context) — silently ignore.
+  }
+}
 </script>
 
 <template>
@@ -30,9 +54,10 @@ const title = computed(() =>
         f(x) = <span class="result-value">{{ secret }}</span>
       </p>
 
-      <!-- Slot for the end-game graph (Task 5.2) and share button (Task 5.3). -->
+      <!-- Slot for the end-game graph (Task 5.2). -->
       <slot />
 
+      <button class="btn-share" @click="share">{{ copied ? 'Copied!' : 'Share' }}</button>
       <button class="btn-submit" @click="$emit('playAgain')">{{ actionLabel }}</button>
     </div>
   </div>
@@ -79,5 +104,19 @@ const title = computed(() =>
 .overlay-secret {
   margin: 0;
   font-size: 1.1rem;
+}
+.btn-share {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  height: 44px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.9rem;
+}
+.btn-share:hover {
+  border-color: var(--color-text-muted);
 }
 </style>

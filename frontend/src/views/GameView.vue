@@ -95,6 +95,7 @@ onMounted(() => {
       :turns-used="turnsUsed"
       :mode="mode"
       :puzzle-number="puzzleNumber"
+      :rows="history"
       @play-again="selectFreePlay"
     >
       <PolynomialChart
