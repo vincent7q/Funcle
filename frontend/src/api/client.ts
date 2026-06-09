@@ -4,6 +4,8 @@ import type {
   ValResponse,
   IsIncResponse,
   TargetResponse,
+  AdminLoginResponse,
+  AdminPuzzleSummary,
 } from '@shared/types';
 
 /**
@@ -15,14 +17,22 @@ const BASE = '/api';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...init,
+    headers: { 'Content-Type': 'application/json', ...(init?.headers as Record<string, string>) },
   });
   if (!res.ok) {
     const payload = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(payload.error ?? `Request failed (${res.status})`);
   }
   return res.json() as Promise<T>;
+}
+
+const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
+
+export interface AdminPuzzleBody {
+  puzzleDate: string;
+  expression: string;
+  note?: string;
 }
 
 export const api = {
@@ -48,5 +58,35 @@ export const api = {
     request<TargetResponse>('/game/target', {
       method: 'POST',
       body: JSON.stringify({ sessionId, expression }),
+    }),
+
+  // --- Admin (§3.3) ---
+  adminLogin: (password: string) =>
+    request<AdminLoginResponse>('/admin/login', {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    }),
+
+  adminListPuzzles: (token: string) =>
+    request<AdminPuzzleSummary[]>('/admin/puzzles', { headers: auth(token) }),
+
+  adminCreatePuzzle: (token: string, body: AdminPuzzleBody) =>
+    request<{ puzzleDate: string; puzzleNumber: number }>('/admin/puzzles', {
+      method: 'POST',
+      headers: auth(token),
+      body: JSON.stringify(body),
+    }),
+
+  adminUpdatePuzzle: (token: string, date: string, body: AdminPuzzleBody) =>
+    request<{ puzzleDate: string; updated: boolean }>(`/admin/puzzles/${date}`, {
+      method: 'PUT',
+      headers: auth(token),
+      body: JSON.stringify(body),
+    }),
+
+  adminDeletePuzzle: (token: string, date: string) =>
+    request<{ puzzleDate: string; deleted: boolean }>(`/admin/puzzles/${date}`, {
+      method: 'DELETE',
+      headers: auth(token),
     }),
 };

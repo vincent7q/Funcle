@@ -9,7 +9,13 @@ const router = createRouter({
       name: 'game',
       component: GameView,
     },
-    // /admin is added in Phase 6 (password-gated puzzle scheduling).
+    {
+      // Password-gated puzzle scheduling (§3.3). Intentionally not linked from
+      // the game UI; lazy-loaded so it stays out of the main bundle.
+      path: '/admin',
+      name: 'admin',
+      component: () => import('../views/AdminView.vue'),
+    },
   ],
 });
 
