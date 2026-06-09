@@ -16,7 +16,7 @@
 
 ## Status (updated 2026-06-10)
 
-**The backend is complete and playable** — Free Play + Daily, the full game loop, with the anti-cheat invariants enforced (the secret never leaves the backend until the game ends). **78 passing Vitest tests; `tsc` + ESLint clean.**
+**The first vertical slice is complete — Free Play is playable end-to-end** (Vue UI → Vite proxy → Express → SQLite → math engine), with the anti-cheat invariants enforced (the secret never leaves the backend until the game ends). Backend: **78 Vitest tests**. Frontend: **17 Vitest tests**. `tsc`/`vue-tsc` + ESLint clean on both; both build.
 
 | Task | Status | Commit |
 |------|--------|--------|
@@ -30,10 +30,12 @@
 | 3.1 `POST /session/new` + `GET /daily` | ✅ | `3f05a5c` |
 | 3.2 Game commands (`val` / `is_inc` / `target`) | ✅ | `0c61b22` |
 | 3.3 Boundary validation | ◑ partial | — |
+| 4.1 Static game screen + Tailwind | ✅ | `ccb954d` |
+| 4.2 Game store + API client + free-play loop | ✅ | (this commit) |
 
 **3.3 note:** session + game routes already validate via zod (400 on bad bodies; `val`/`is_inc` return `"error"` for invalid `x` per §13 Q4). Finish 3.3 (admin/stats validation + 400 tests) when those routes are implemented in Phases 6/7.
 
-**Next (continues the first slice):** **4.1** static main game screen (Vue + Tailwind, per `design/funcle_ui_blueprint.html` + §7) → **4.2** `gameStore` + `fetch` API client wired to the live backend = fully playable Free Play UI. Then daily mode (4.3) and the rest.
+**Next:** **4.3** daily mode load/resume in the UI, then **Phase 5** end-of-game experience (WinScreen → `PolynomialChart` graph reveal → share). Phases 6 (admin) and 7 (users/stats/secondary screens) follow; 3.3 finishes when admin/stats land. To run locally: `cd backend && npm run dev` (port 3000) + `cd frontend && npm run dev` (Vite proxies `/api` → 3000).
 
 **Environment note:** frontend is pinned to a Vite 6 / Vitest 2 stack because the dev machine runs Node 20.17 (the current Vite 8/rolldown toolchain needs ≥20.19). See `CLAUDE.md` and project memory before bumping frontend deps. Branch `feat/scaffold` is **not yet pushed** to origin.
 

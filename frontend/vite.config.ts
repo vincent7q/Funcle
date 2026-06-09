@@ -15,5 +15,9 @@ export default defineConfig({
   server: {
     // Allow importing the repo-root shared/ directory (outside the frontend root).
     fs: { allow: ['..'] },
+    // Proxy API calls to the backend in dev so the client can use a relative /api base.
+    proxy: {
+      '/api': { target: 'http://localhost:3000', changeOrigin: true },
+    },
   },
 });
