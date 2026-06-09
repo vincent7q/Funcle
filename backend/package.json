@@ -5,7 +5,7 @@
   "description": "Funcle backend — Express + SQLite API and pure math engine",
   "scripts": {
     "dev": "tsx watch server.ts",
-    "build": "tsc",
+    "build": "tsc && node scripts/postbuild.mjs",
     "start": "node dist/backend/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
