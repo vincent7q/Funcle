@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { createApp } from './server';
+import { openDb } from './db/db';
 
-const app = createApp();
+const app = createApp(openDb(':memory:'));
 
 describe('route skeleton (stubs)', () => {
   it('POST /api/session/new returns 200 with 6 turns remaining', async () => {

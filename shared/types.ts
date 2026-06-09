@@ -7,6 +7,9 @@
  * runtime validation and compile-time types in lockstep.
  */
 
+/** Total turns a player gets per game (spec §4.2). */
+export const TOTAL_TURNS = 6;
+
 /** The three player commands (spec §4.3). */
 export const COMMANDS = ['val', 'is_inc', 'target'] as const;
 export type Command = (typeof COMMANDS)[number];

@@ -5,16 +5,19 @@ import express, {
   type NextFunction,
 } from 'express';
 import cors from 'cors';
-import { sessionRoute } from './routes/sessionRoute';
+import { mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { openDb, type Db } from './db/db';
+import { createSessionRouter } from './routes/sessionRoute';
 import { gameRoute } from './routes/gameRoute';
 import { statsRoute } from './routes/statsRoute';
 import { adminRoute } from './routes/adminRoute';
 
 /**
- * Builds the Express application. Kept separate from `listen` so tests can
- * import the app without binding a port. (spec §8/§11)
+ * Builds the Express application around a database connection. The DB is
+ * injected so tests can pass an isolated in-memory database. (spec §8/§11)
  */
-export function createApp(): Express {
+export function createApp(db: Db): Express {
   const app = express();
 
   app.use(cors());
@@ -25,14 +28,14 @@ export function createApp(): Express {
     res.json({ status: 'ok', service: 'funcle-backend' });
   });
 
-  // Feature routers (stubs for now; real logic lands in Phases 3, 6, 7).
-  app.use('/api', sessionRoute);
+  // Feature routers. session is wired to the DB; game/stats/admin are still
+  // stubs (real logic lands in Phases 3.2, 7, 6 respectively).
+  app.use('/api', createSessionRouter(db));
   app.use('/api/game', gameRoute);
   app.use('/api/stats', statsRoute);
   app.use('/api/admin', adminRoute);
 
-  // Central error handler — last middleware. Returns JSON so clients never get
-  // an HTML error page. Express routes a thrown/`next(err)` error here.
+  // Central error handler — last middleware. Returns JSON, never an HTML page.
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     const message = err instanceof Error ? err.message : 'Internal server error';
     res.status(500).json({ error: message });
@@ -41,10 +44,11 @@ export function createApp(): Express {
   return app;
 }
 
-export const app = createApp();
-
-// Only start listening when run directly (not when imported by tests).
+// Only open the DB + start listening when run directly (not when imported by tests).
 if (require.main === module) {
+  const dbPath = process.env.DB_PATH ?? './data/funcle.db';
+  if (dbPath !== ':memory:') mkdirSync(dirname(dbPath), { recursive: true });
+  const app = createApp(openDb(dbPath));
   const port = Number(process.env.PORT) || 3000;
   app.listen(port, () => {
     console.log(`Funcle backend listening on http://localhost:${port}`);
