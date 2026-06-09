@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funcle UI Blueprint</title>
+    <style>
+        :root {
+            --bg-color: #121213;
+            --card-bg: #1a1a1b;
+            --border-color: #3a3a3c;
+            --text-color: #ffffff;
+            --text-muted: #818384;
+            --color-val: #538d4e;       /* Wordle Green for absolute numerical coordinates */
+            --color-inc: #b59f3b;       /* Wordle Yellow for local vector behavior */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Container designed to mimic mobile-first Wordle app boundary */
+        .game-container {
+            width: 100%;
+            max-width: 450px;
+            height: 100vh;
+            max-height: 750px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            position: relative;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.2rem;
+            letter-spacing: 3px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 3px 0 0 0;
+        }
+
+        /* Main game grid architecture - 6 distinct rows */
+        .grid-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 20px 0;
+            flex-grow: 1;
+            justify-content: center;
+        }
+
+        .grid-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            height: 52px;
+            padding: 0 16px;
+            box-sizing: border-box;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        /* Modifier States for AI parsing logic */
+        .grid-row.state-val {
+            border-color: var(--color-val);
+            background-color: rgba(83, 141, 78, 0.15);
+        }
+        .grid-row.state-val .badge {
+            background-color: var(--color-val);
+        }
+
+        .grid-row.state-inc {
+            border-color: var(--color-inc);
+            background-color: rgba(181, 159, 59, 0.15);
+        }
+        .grid-row.state-inc .badge {
+            background-color: var(--color-inc);
+        }
+
+        .grid-row.state-empty {
+            border-style: dashed;
+            opacity: 0.3;
+        }
+
+        .left-block {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #ffffff;
+        }
+
+        .badge-empty {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--border-color);
+        }
+
+        .result-value {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.2rem;
+        }
+
+        /* Input Interaction Block */
+        .controls-container {
+            border-top: 1px solid var(--border-color);
+            padding-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .control-group.small {
+            flex-grow: 0;
+            width: 100px;
+        }
+
+        label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        select, input {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            height: 42px;
+            border-radius: 4px;
+            padding: 0 10px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--text-muted);
+        }
+
+        .btn-submit {
+            background-color: var(--color-val);
+            color: white;
+            border: none;
+            height: 42px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-submit:hover {
+            background-color: #43723f;
+        }
+
+        .status-bar {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <header>
+            <h1>FUNCLE</h1>
+            <p class="subtitle">The Function Detective Puzzle</p>
+        </header>
+
+        <!-- The 6 Turn Clue Grid -->
+        <div class="grid-container">
+            <!-- Row 1: Example of an absolute structural value evaluated -->
+            <div class="grid-row state-val">
+                <div class="left-block">
+                    <span class="badge">val 0</span>
+                </div>
+                <div class="result-value">-4</div>
+            </div>
+
+            <!-- Row 2: Example of a local slope inquiry evaluated -->
+            <div class="grid-row state-inc">
+                <div class="left-block">
+                    <span class="badge">is_inc 1</span>
+                </div>
+                <div class="result-value">Increasing</div>
+            </div>
+
+            <!-- Row 3: Active Row waiting for data submission -->
+            <div class="grid-row">
+                <div class="left-block">
+                    <div class="badge-empty"></div>
+                    <span style="color: var(--text-muted); font-style: italic; font-size: 0.95rem;">Awaiting clue entry...</span>
+                </div>
+                <div class="result-value"></div>
+            </div>
+
+            <!-- Row 4: Empty Turn slot -->
+            <div class="grid-row state-empty">
+                <div class="left-block"><div class="badge-empty"></div></div>
+                <div class="result-value"></div>
+            </div>
+
+            <!-- Row 5: Empty Turn slot -->
+            <div class="grid-row state-empty">
+                <div class="left-block"><div class="badge-empty"></div></div>
+                <div class="result-value"></div>
+            </div>
+
+            <!-- Row 6: Empty Turn slot -->
+            <div class="grid-row state-empty">
+                <div class="left-block"><div class="badge-empty"></div></div>
+                <div class="result-value"></div>
+            </div>
+        </div>
+
+        <!-- Interactive Control Form Matrix for UI Blueprint Guidance -->
+        <div class="controls-container">
+            <div class="input-row">
+                <div class="control-group">
+                    <label for="action-select">Select Action</label>
+                    <select id="action-select">
+                        <option value="val">val (Evaluate Point)</option>
+                        <option value="is_inc">is_inc (Check Direction)</option>
+                        <option value="target">target (Submit Final Guess)</option>
+                    </select>
+                </div>
+                
+                <div class="control-group small">
+                    <label for="param-input">Input x</label>
+                    <input type="text" id="param-input" value="2" placeholder="e.g. 5">
+                </div>
+            </div>
+
+            <button class="btn-submit">Submit Clue</button>
+            
+            <div class="status-bar">
+                Remaining Guess Bullets: 4 / 6
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

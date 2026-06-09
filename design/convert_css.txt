@@ -1,0 +1,1 @@
+"Convert this structural HTML template into dynamic Vue.js components. Use the .state-val and .state-inc CSS classes to automatically re-render rows dynamically based on the type of equation input the user executes."
