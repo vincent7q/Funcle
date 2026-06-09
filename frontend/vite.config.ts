@@ -9,6 +9,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@shared': fileURLToPath(new URL('../shared', import.meta.url)),
     },
+  },
+  server: {
+    // Allow importing the repo-root shared/ directory (outside the frontend root).
+    fs: { allow: ['..'] },
   },
 });
