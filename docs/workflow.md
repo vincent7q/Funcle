@@ -41,11 +41,12 @@
 | 6.3 Admin page UI (`/admin`) | ✅ | `3b96b05` |
 | 7.1 Optional accounts (bcrypt) | ✅ | `a3e031c` |
 | 7.2 Stats tracking + `/stats/:userId` | ✅ | `74edb81` |
-| 7.3 Help / Stats / Settings overlays | ✅ | (this commit) |
+| 7.3 Help / Stats / Settings overlays | ✅ | `df043a2` |
+| 8.1 Responsive & touch pass (CSS) | ✅ | (this commit) |
 
 **3.3 note:** session + game routes already validate via zod (400 on bad bodies; `val`/`is_inc` return `"error"` for invalid `x` per §13 Q4). Finish 3.3 (admin/stats validation + 400 tests) when those routes are implemented in Phases 6/7.
 
-**Next:** **Phase 8** — 8.1 responsive/touch pass (mobile + iPad portrait/landscape, ~44px targets, fluid graph), 8.2 test & coverage sweep, 8.3 deployment (container build, persistent SQLite volume, env/secrets, optional single-origin serving). This is the final polish/ship phase; the game + admin are fully functional. Phases 6 (admin) and 7 (users/stats/secondary screens) follow; 3.3 finishes when admin/stats land. To run locally: `cd backend && npm run dev` (port 3000) + `cd frontend && npm run dev` (Vite proxies `/api` → 3000).
+**Next (deferred by request):** **8.2** test & coverage sweep and **8.3** deployment (container build, persistent SQLite volume, env/secrets, optional single-origin serving). 8.1's CSS responsive/touch work is done; the remaining 8.1 acceptance is **manual on-device verification** (phone + iPad, portrait/landscape) — for the user to confirm. Phases 6 (admin) and 7 (users/stats/secondary screens) follow; 3.3 finishes when admin/stats land. To run locally: `cd backend && npm run dev` (port 3000) + `cd frontend && npm run dev` (Vite proxies `/api` → 3000).
 
 **Environment note:** frontend is pinned to a Vite 6 / Vitest 2 stack because the dev machine runs Node 20.17 (the current Vite 8/rolldown toolchain needs ≥20.19). See `CLAUDE.md` and project memory before bumping frontend deps. Branch `feat/scaffold` is **not yet pushed** to origin.
 

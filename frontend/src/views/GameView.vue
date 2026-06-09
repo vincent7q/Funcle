@@ -130,7 +130,7 @@ onMounted(() => {
   background: transparent;
   border: 1px solid var(--color-border);
   color: var(--color-text-muted);
-  min-height: 32px;
+  min-height: 40px;
   padding: 0 14px;
   border-radius: 4px;
   cursor: pointer;

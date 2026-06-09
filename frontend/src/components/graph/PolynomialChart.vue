@@ -54,7 +54,8 @@ const chartOptions = {
 <style scoped>
 .chart-wrap {
   position: relative;
-  height: 220px;
+  /* Fluid height so the curve reads well from phone to tablet (§7.4, §7.7). */
+  height: clamp(180px, 38vh, 280px);
   width: 100%;
 }
 </style>

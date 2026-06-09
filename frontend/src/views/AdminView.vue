@@ -102,6 +102,7 @@ onMounted(() => {
       </form>
 
       <!-- Scheduled puzzles -->
+      <div class="table-scroll">
       <table class="admin-table">
         <thead>
           <tr>
@@ -135,6 +136,7 @@ onMounted(() => {
           </tr>
         </tbody>
       </table>
+      </div>
     </template>
   </main>
 </template>
@@ -185,6 +187,9 @@ onMounted(() => {
 .admin-error {
   color: var(--color-directional);
   margin: 8px 0 0;
+}
+.table-scroll {
+  overflow-x: auto; /* let the 6-column table scroll on narrow phones (§7.7) */
 }
 .admin-table {
   width: 100%;
