@@ -10,7 +10,32 @@
 
 **Tech stack:** TypeScript everywhere. Backend: Node + Express + better-sqlite3 + mathjs + zod. Frontend: Vue 3 + Vite + Pinia + Tailwind + Chart.js. Tests: Vitest. (See §2.)
 
-**Working method:** TDD for all logic (tests before implementation), DRY, YAGNI, frequent commits. Implementation happens in a dedicated git worktree.
+**Working method:** TDD for all logic (tests before implementation), DRY, YAGNI, frequent commits. (Implementation is on the `feat/scaffold` branch in the main working tree — no separate worktree was used.)
+
+---
+
+## Status (updated 2026-06-10)
+
+**The backend is complete and playable** — Free Play + Daily, the full game loop, with the anti-cheat invariants enforced (the secret never leaves the backend until the game ends). **78 passing Vitest tests; `tsc` + ESLint clean.**
+
+| Task | Status | Commit |
+|------|--------|--------|
+| 0.1 Scaffold backend + frontend + tooling | ✅ | `5c29bdc` |
+| 0.2 Shared domain types + zod schemas (`shared/`) | ✅ | `0d1c4b2` |
+| 1.1 SQLite DB layer (schema + `openDb`) | ✅ | `df3a800` |
+| 1.2 Express skeleton + route stubs | ✅ | `2f7df90` |
+| 2.1 `polynomial.ts` (evaluate, generate, formatPolynomial) | ✅ | `095d610` / `0c61b22` |
+| 2.2 `derivative.ts` (`is_inc` direction) | ✅ | `8745de9` |
+| 2.3 `parser.ts` (safe parse + sampling equivalence) | ✅ | `579a1ca` |
+| 3.1 `POST /session/new` + `GET /daily` | ✅ | `3f05a5c` |
+| 3.2 Game commands (`val` / `is_inc` / `target`) | ✅ | `0c61b22` |
+| 3.3 Boundary validation | ◑ partial | — |
+
+**3.3 note:** session + game routes already validate via zod (400 on bad bodies; `val`/`is_inc` return `"error"` for invalid `x` per §13 Q4). Finish 3.3 (admin/stats validation + 400 tests) when those routes are implemented in Phases 6/7.
+
+**Next (continues the first slice):** **4.1** static main game screen (Vue + Tailwind, per `design/funcle_ui_blueprint.html` + §7) → **4.2** `gameStore` + `fetch` API client wired to the live backend = fully playable Free Play UI. Then daily mode (4.3) and the rest.
+
+**Environment note:** frontend is pinned to a Vite 6 / Vitest 2 stack because the dev machine runs Node 20.17 (the current Vite 8/rolldown toolchain needs ≥20.19). See `CLAUDE.md` and project memory before bumping frontend deps. Branch `feat/scaffold` is **not yet pushed** to origin.
 
 ---
 
