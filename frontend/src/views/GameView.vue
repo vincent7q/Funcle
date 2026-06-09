@@ -9,6 +9,7 @@ import GameGrid from '@/components/game/GameGrid.vue';
 import CommandSelector from '@/components/input/CommandSelector.vue';
 import ValueInput from '@/components/input/ValueInput.vue';
 import SubmitButton from '@/components/input/SubmitButton.vue';
+import WinScreen from '@/components/game/WinScreen.vue';
 import type { GridRow } from '@/components/game/rowState';
 
 const store = useGameStore();
@@ -19,6 +20,8 @@ const command = ref<Command>('val');
 const inputValue = ref('');
 
 const isOver = computed(() => gameStatus.value === 'won' || gameStatus.value === 'lost');
+const endStatus = computed<'won' | 'lost'>(() => (gameStatus.value === 'won' ? 'won' : 'lost'));
+const turnsUsed = computed(() => TOTAL_TURNS - turnsRemaining.value);
 
 const displayRows = computed<GridRow[]>(() => {
   const rows = [...history.value];
@@ -68,28 +71,27 @@ onMounted(() => {
 
     <GameGrid :rows="displayRows" />
 
-    <div class="controls-container">
-      <template v-if="!isOver">
-        <div class="input-row">
-          <CommandSelector v-model="command" />
-          <ValueInput :command="command" v-model="inputValue" />
-        </div>
-        <SubmitButton :disabled="gameStatus !== 'active'" @submit="onSubmit" />
-        <div v-if="inputError" class="status-bar" style="color: var(--color-directional)">
-          {{ inputError }}
-        </div>
-        <div class="status-bar">Remaining Guess Bullets: {{ turnsRemaining }} / {{ TOTAL_TURNS }}</div>
-      </template>
-
-      <template v-else>
-        <div class="status-bar" style="font-size: 1rem; color: var(--color-text)">
-          {{ gameStatus === 'won' ? '🎯 Solved it!' : 'Out of turns.' }}
-          <span v-if="secret" class="result-value">f(x) = {{ secret }}</span>
-        </div>
-        <button v-if="mode === 'freeplay'" class="btn-submit" @click="selectFreePlay">New Game</button>
-        <button v-else class="btn-submit" @click="selectFreePlay">Play Free Play</button>
-      </template>
+    <div v-if="!isOver" class="controls-container">
+      <div class="input-row">
+        <CommandSelector v-model="command" />
+        <ValueInput :command="command" v-model="inputValue" />
+      </div>
+      <SubmitButton :disabled="gameStatus !== 'active'" @submit="onSubmit" />
+      <div v-if="inputError" class="status-bar" style="color: var(--color-directional)">
+        {{ inputError }}
+      </div>
+      <div class="status-bar">Remaining Guess Bullets: {{ turnsRemaining }} / {{ TOTAL_TURNS }}</div>
     </div>
+
+    <WinScreen
+      v-if="isOver"
+      :status="endStatus"
+      :secret="secret"
+      :turns-used="turnsUsed"
+      :mode="mode"
+      :puzzle-number="puzzleNumber"
+      @play-again="selectFreePlay"
+    />
   </main>
 </template>
 
