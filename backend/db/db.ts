@@ -9,6 +9,7 @@ import type {
   GameStatus,
   MoveRecord,
   PuzzleSource,
+  StatsResponse,
 } from '../../shared/types';
 
 export type Db = Database.Database;
@@ -234,6 +235,77 @@ export function createUser(db: Db, params: { username: string; passwordHash: str
 
 export function getUserByUsername(db: Db, username: string): UserRow | undefined {
   return db.prepare(`SELECT * FROM users WHERE username = ?`).get(username) as UserRow | undefined;
+}
+
+interface UserStatsRow {
+  user_id: string;
+  games_played: number;
+  games_won: number;
+  current_streak: number;
+  max_streak: number;
+  win_distribution: string;
+}
+
+/** Read a player's aggregate stats (zeros if they have none yet). */
+export function getStats(db: Db, userId: string): StatsResponse {
+  const row = db.prepare(`SELECT * FROM user_stats WHERE user_id = ?`).get(userId) as
+    | UserStatsRow
+    | undefined;
+  if (!row) {
+    return { gamesPlayed: 0, gamesWon: 0, currentStreak: 0, maxStreak: 0, winDistribution: {} };
+  }
+  return {
+    gamesPlayed: row.games_played,
+    gamesWon: row.games_won,
+    currentStreak: row.current_streak,
+    maxStreak: row.max_streak,
+    winDistribution: JSON.parse(row.win_distribution) as Record<string, number>,
+  };
+}
+
+/**
+ * Record a finished game for a player: increment games played/won, advance the
+ * win streak on a win (reset to 0 on a loss), track the max streak, and bucket
+ * the turn count into the win distribution (spec §5.2).
+ */
+export function recordGameResult(
+  db: Db,
+  userId: string,
+  result: { won: boolean; turnsUsed: number },
+): void {
+  const row = db.prepare(`SELECT * FROM user_stats WHERE user_id = ?`).get(userId) as
+    | UserStatsRow
+    | undefined;
+
+  const prev = row ?? {
+    games_played: 0,
+    games_won: 0,
+    current_streak: 0,
+    max_streak: 0,
+    win_distribution: '{}',
+  };
+  const dist = JSON.parse(prev.win_distribution) as Record<string, number>;
+  const currentStreak = result.won ? prev.current_streak + 1 : 0;
+  const maxStreak = Math.max(prev.max_streak, currentStreak);
+  if (result.won) {
+    const key = String(result.turnsUsed);
+    dist[key] = (dist[key] ?? 0) + 1;
+  }
+
+  db.prepare(
+    `INSERT INTO user_stats (user_id, games_played, games_won, current_streak, max_streak, win_distribution)
+     VALUES (@userId, @played, @won, @streak, @maxStreak, @dist)
+     ON CONFLICT(user_id) DO UPDATE SET
+       games_played = @played, games_won = @won, current_streak = @streak,
+       max_streak = @maxStreak, win_distribution = @dist`,
+  ).run({
+    userId,
+    played: prev.games_played + 1,
+    won: prev.games_won + (result.won ? 1 : 0),
+    streak: currentStreak,
+    maxStreak,
+    dist: JSON.stringify(dist),
+  });
 }
 
 /** All moves for a session, ordered by turn, mapped to the shared MoveRecord shape. */

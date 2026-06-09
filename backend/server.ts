@@ -13,7 +13,7 @@ import { getAdminConfig, type AdminConfig } from './config';
 import { createSessionRouter } from './routes/sessionRoute';
 import { createGameRouter } from './routes/gameRoute';
 import { createAuthRouter } from './routes/authRoute';
-import { statsRoute } from './routes/statsRoute';
+import { createStatsRouter } from './routes/statsRoute';
 import { createAdminRouter } from './routes/adminRoute';
 
 /**
@@ -36,7 +36,7 @@ export function createApp(db: Db, adminConfig: AdminConfig = getAdminConfig()): 
   app.use('/api', createSessionRouter(db));
   app.use('/api/game', createGameRouter(db));
   app.use('/api/auth', createAuthRouter(db));
-  app.use('/api/stats', statsRoute);
+  app.use('/api/stats', createStatsRouter(db));
   app.use('/api/admin', createAdminRouter(db, adminConfig));
 
   // Central error handler — last middleware. Returns JSON, never an HTML page.

@@ -45,9 +45,10 @@ CREATE TABLE IF NOT EXISTS users (
   created_at    TEXT NOT NULL
 );
 
--- Aggregated stats per user.
+-- Aggregated stats per identity. Keyed by either an account id (users.id) or an
+-- anonymous browser UUID, so anonymous play is tracked too (§5.2) — hence no FK.
 CREATE TABLE IF NOT EXISTS user_stats (
-  user_id          TEXT PRIMARY KEY REFERENCES users(id),
+  user_id          TEXT PRIMARY KEY,
   games_played     INTEGER NOT NULL DEFAULT 0,
   games_won        INTEGER NOT NULL DEFAULT 0,
   current_streak   INTEGER NOT NULL DEFAULT 0,

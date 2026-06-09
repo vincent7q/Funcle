@@ -11,7 +11,14 @@ import { targetRequestSchema } from '../../shared/schemas';
 import { evaluate, formatPolynomial } from '../engine/polynomial';
 import { evaluateDirection } from '../engine/derivative';
 import { isEquivalent } from '../engine/parser';
-import { type Db, type SessionRow, getSession, updateSession, insertMove } from '../db/db';
+import {
+  type Db,
+  type SessionRow,
+  getSession,
+  updateSession,
+  insertMove,
+  recordGameResult,
+} from '../db/db';
 
 /**
  * Game command routes (spec §4.2/§4.3, §8). Mounted at `/api/game`.
@@ -116,6 +123,7 @@ export function createGameRouter(db: Db): Router {
 
     if (correct) {
       updateSession(db, session.id, { status: 'won', turnsUsed: turn });
+      if (session.user_id) recordGameResult(db, session.user_id, { won: true, turnsUsed: turn });
       const body: TargetResponse = {
         correct: true,
         gameStatus: 'won',
@@ -129,6 +137,9 @@ export function createGameRouter(db: Db): Router {
 
     const lost = turn >= TOTAL_TURNS;
     updateSession(db, session.id, { status: lost ? 'lost' : 'active', turnsUsed: turn });
+    if (lost && session.user_id) {
+      recordGameResult(db, session.user_id, { won: false, turnsUsed: turn });
+    }
     const body: TargetResponse = {
       correct: false,
       gameStatus: lost ? 'lost' : 'active',
@@ -163,6 +174,9 @@ function commitClue(
   });
   const lost = turn >= TOTAL_TURNS;
   updateSession(db, session.id, { status: lost ? 'lost' : 'active', turnsUsed: turn });
+  if (lost && session.user_id) {
+    recordGameResult(db, session.user_id, { won: false, turnsUsed: turn });
+  }
 
   const body = {
     result,

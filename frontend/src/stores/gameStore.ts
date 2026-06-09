@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import type { Coefficients, Command, GameMode, GameStatus, MoveRecord } from '@shared/types';
 import { TOTAL_TURNS } from '@shared/types';
 import { api } from '@/api/client';
-import { getAnonId } from '@/lib/anonId';
+import { useAuthStore } from '@/stores/authStore';
 import type { GridRow } from '@/components/game/rowState';
 
 type Status = 'idle' | GameStatus;
@@ -51,7 +51,7 @@ export const useGameStore = defineStore('game', () => {
   async function startFreePlay(): Promise<void> {
     loading.value = true;
     try {
-      const res = await api.newSession(null);
+      const res = await api.newSession(useAuthStore().currentUserId);
       reset();
       sessionId.value = res.sessionId;
       mode.value = 'freeplay';
@@ -67,7 +67,7 @@ export const useGameStore = defineStore('game', () => {
   async function startDaily(): Promise<void> {
     loading.value = true;
     try {
-      const res = await api.getDaily(getAnonId());
+      const res = await api.getDaily(useAuthStore().currentUserId);
       reset();
       sessionId.value = res.sessionId;
       mode.value = 'daily';

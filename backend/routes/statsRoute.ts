@@ -1,20 +1,17 @@
 import { Router, type Request, type Response } from 'express';
-import type { StatsResponse } from '../../shared/types';
+import { type Db, getStats } from '../db/db';
 
 /**
- * Stats route (spec §8). Mounted at `/api/stats`.
- * Stub response for now — real logic arrives in Task 7.2.
+ * Stats route (spec §5.2, §8). Mounted at `/api/stats`. The `:userId` is either
+ * an account id or an anonymous browser UUID; unknown ids return zeros.
  */
-export const statsRoute = Router();
+export function createStatsRouter(db: Db): Router {
+  const router = Router();
 
-// GET /api/stats/:userId
-statsRoute.get('/:userId', (_req: Request, res: Response) => {
-  const body: StatsResponse = {
-    gamesPlayed: 0,
-    gamesWon: 0,
-    currentStreak: 0,
-    maxStreak: 0,
-    winDistribution: {},
-  };
-  res.json(body);
-});
+  // GET /api/stats/:userId
+  router.get('/:userId', (req: Request, res: Response) => {
+    res.json(getStats(db, req.params.userId));
+  });
+
+  return router;
+}
