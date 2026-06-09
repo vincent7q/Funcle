@@ -111,31 +111,54 @@ The UI will adopt Wordle's signature aesthetics: a vertical layout optimized for
 
 ---
 
-### 5. Outstanding Questions for Math Validation
+### 5. Daily Puzzle Content Management
+A core feature is the **Daily Puzzle**: every calendar day, all players worldwide face the *same* secret function — mirroring Wordle's shared-daily-challenge format that drives engagement and social sharing.
+
+This raises a content question: *where do the daily functions come from?* The decision is to use a **curated question bank** authored by the mathematician, rather than purely random generation, so each day's puzzle is intentional and well-paced in difficulty.
+
+#### 5.1 Admin Authoring Page
+To make this practical, the project includes a simple, **password-protected admin page** (separate from the player-facing game, reached at a route such as `/admin`):
+* **Single fixed password:** Access is gated by one operator password held in a server environment variable (never hardcoded). This is deliberately lightweight — a private authoring tool, not a multi-user account system.
+* **Schedule ahead:** The mathematician picks a future calendar date and enters that day's secret function as an ordinary math expression (e.g. `x^2 - 4`). The system parses and validates it (degree ≤ 3, integer coefficients −10..10) before saving. He can prepare a single day or queue weeks/months of puzzles in one sitting — no need to log in daily.
+* **Immutable history:** Past and current-day puzzles are locked; only future entries can be edited or removed.
+
+> *Note on terminology:* The "question" is always the same — identify $f(x)$. So per date the author is really entering the **answer** (the secret polynomial); there is no separate question text.
+
+#### 5.2 Automatic Fallback
+If the curated queue is ever exhausted (no puzzle scheduled for a given day), the backend **automatically generates** a valid function deterministically from the date, so the game never goes dark. Because generation is seeded by the date, every player still receives the identical puzzle. The curated bank is the primary source; auto-generation is purely a safety net.
+
+---
+
+### 6. Outstanding Questions for Math Validation
 *To ensure a robust system architecture, please have your son clarify the following technical math rules before coding begins:*
 
 1.  **Polynomial Degree Boundary ($n$):**
     * What is the maximum degree allowed for the secret function? Is it limited to quadratics ($n=2$, e.g., $x^2 + 2x + 1$), cubics ($n=3$), or can it scale higher? 
     * *Why this matters to IT:* This determines how we generate functions randomly without breaking game balance.
+    Answer: Maximum degree of polynomial=3
 
 2.  **Coefficient Constraints ($a_i$):**
     * What is the acceptable range for the integer coefficients? (e.g., integers between $-10$ and $+10$). Can the leading coefficient $a_n$ be negative?
     * *Why this matters to IT:* Prevents the generator from producing unplayable equations like $f(x) = 87x^2 - 53x + 99$.
+    Answer: coefficient from between -10 to 10
 
 3.  **Derivative Evaluation at Critical Points ($f'(x) = 0$):**
     * If the user executes `is_inc x` exactly at a peak, valley, or inflection point where the derivative evaluates to exactly 0 (e.g., at $x=0$ for $f(x)=x^2$), what should the engine return? 
     * *Options:* Should it output `Stationary`, `Zero`, or display an explicit error/hint?
+    Answer:when x at the peak, is_inc x command will return "Stationary"
 
 4.  **Domain Constraints for Input $x$:**
     * Is the player limited to inputting integers for $x$ when using `val x` and `is_inc x`, or can they enter decimals/fractions (e.g., `val 1.5`)?
     * *Why this matters to IT:* Dictates whether our input validation field needs to accept floats or strictly integers.
+    Answer: Can enter any decimals or integers, invalid input just returned "error" and tell the player try again.
 
 5.  **String Target Equivalence Rule:**
     * How strict is the math matching algorithm? If the secret is $x^2 - 4$, and the player inputs `target -4 + x^2` or `target (x-2)(x+2)`, does the game evaluate this as correct?
     * *Why this matters to IT:* If order does not matter, the backend must use a symbolic math parser to simplify the user's expression before checking equality, rather than checking standard text strings.
+    Answer: Both are correct
 
 ---
-### 6. Next Steps
-1.  **Review & Confirm:** Math student to review definitions and provide answers to Section 5.
-2.  **Database / State Modeling:** Formulate the JSON payload template for tracking state history.
-3.  **Prototyping:** Begin coding the core math engine evaluation loop.
+### 7. Next Steps
+1.  **Review & Confirm:** ✅ Done — the mathematician's answers to Section 6 are confirmed and integrated into `docs/specifications.md` (§13).
+2.  **Database / State Modeling:** Formulate the JSON payload template for tracking state history (see `specifications.md` §9).
+3.  **Prototyping:** Begin coding the core math engine evaluation loop, then the daily-puzzle pipeline and admin page (§5).
