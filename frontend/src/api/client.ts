@@ -4,6 +4,8 @@ import type {
   ValResponse,
   IsIncResponse,
   TargetResponse,
+  AuthResponse,
+  StatsResponse,
   AdminLoginResponse,
   AdminPuzzleSummary,
 } from '@shared/types';
@@ -59,6 +61,21 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ sessionId, expression }),
     }),
+
+  // --- Accounts (§5) ---
+  register: (username: string, password: string) =>
+    request<AuthResponse>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    }),
+
+  login: (username: string, password: string) =>
+    request<AuthResponse>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    }),
+
+  stats: (userId: string) => request<StatsResponse>(`/stats/${encodeURIComponent(userId)}`),
 
   // --- Admin (§3.3) ---
   adminLogin: (password: string) =>

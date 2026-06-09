@@ -216,6 +216,26 @@ export function insertMove(
   );
 }
 
+export interface UserRow {
+  id: string;
+  username: string;
+  password_hash: string;
+  created_at: string;
+}
+
+/** Create a user account; returns the generated UUID. */
+export function createUser(db: Db, params: { username: string; passwordHash: string }): string {
+  const id = randomUUID();
+  db.prepare(
+    `INSERT INTO users (id, username, password_hash, created_at) VALUES (?, ?, ?, ?)`,
+  ).run(id, params.username, params.passwordHash, new Date().toISOString());
+  return id;
+}
+
+export function getUserByUsername(db: Db, username: string): UserRow | undefined {
+  return db.prepare(`SELECT * FROM users WHERE username = ?`).get(username) as UserRow | undefined;
+}
+
 /** All moves for a session, ordered by turn, mapped to the shared MoveRecord shape. */
 export function getMoves(db: Db, sessionId: string): MoveRecord[] {
   const rows = db

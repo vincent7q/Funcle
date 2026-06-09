@@ -43,6 +43,20 @@ export const targetRequestSchema = z.object({
 });
 export type TargetRequest = z.infer<typeof targetRequestSchema>;
 
+/** POST /api/auth/register */
+export const registerRequestSchema = z.object({
+  username: z.string().min(3).max(20),
+  password: z.string().min(6),
+});
+export type RegisterRequest = z.infer<typeof registerRequestSchema>;
+
+/** POST /api/auth/login */
+export const loginRequestSchema = z.object({
+  username: z.string().min(1),
+  password: z.string().min(1),
+});
+export type LoginRequest = z.infer<typeof loginRequestSchema>;
+
 /** POST /api/admin/login */
 export const adminLoginRequestSchema = z.object({
   password: z.string().min(1),

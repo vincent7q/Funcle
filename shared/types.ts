@@ -116,6 +116,11 @@ export interface StatsResponse {
   winDistribution: Record<string, number>;
 }
 
+export interface AuthResponse {
+  userId: string;
+  username: string;
+}
+
 export interface AdminLoginResponse {
   token: string;
 }
