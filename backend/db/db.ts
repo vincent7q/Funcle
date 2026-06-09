@@ -132,6 +132,40 @@ export function getNextPuzzleNumber(db: Db): number {
   return (row.max ?? 0) + 1;
 }
 
+/** List puzzles, optionally bounded by an inclusive ISO date range. */
+export function getPuzzlesInRange(db: Db, from?: string, to?: string): DailyPuzzleRow[] {
+  let sql = `SELECT * FROM daily_puzzles`;
+  const where: string[] = [];
+  const args: string[] = [];
+  if (from) {
+    where.push(`puzzle_date >= ?`);
+    args.push(from);
+  }
+  if (to) {
+    where.push(`puzzle_date <= ?`);
+    args.push(to);
+  }
+  if (where.length) sql += ` WHERE ${where.join(' AND ')}`;
+  sql += ` ORDER BY puzzle_date`;
+  return db.prepare(sql).all(...args) as DailyPuzzleRow[];
+}
+
+export function updateDailyPuzzle(
+  db: Db,
+  date: string,
+  fields: { coefficients: Coefficients; note: string | null },
+): void {
+  db.prepare(`UPDATE daily_puzzles SET coefficients = ?, note = ? WHERE puzzle_date = ?`).run(
+    JSON.stringify(fields.coefficients),
+    fields.note,
+    date,
+  );
+}
+
+export function deleteDailyPuzzle(db: Db, date: string): void {
+  db.prepare(`DELETE FROM daily_puzzles WHERE puzzle_date = ?`).run(date);
+}
+
 export function insertDailyPuzzle(
   db: Db,
   params: {

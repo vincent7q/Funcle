@@ -91,6 +91,71 @@ export function compileSafe(expr: string): (x: number) => number {
  * within tolerance (§13 Q5). Invalid/malicious input is treated as a non-match
  * (returns false) rather than throwing, so callers can route it as a wrong guess.
  */
+/** Result of parsing an admin-authored expression into a validated secret. */
+export type ParsedPolynomial =
+  | { ok: true; coeffs: Coefficients }
+  | { ok: false; reason: string };
+
+/** Round to the nearest integer if within tolerance, else null. */
+function nearestInt(value: number): number | null {
+  const rounded = Math.round(value);
+  return Math.abs(value - rounded) <= 1e-6 ? rounded : null;
+}
+
+/**
+ * Parse an admin-authored expression into integer coefficients and validate it
+ * against the confirmed §13 rules (degree 1–3, integer coeffs −10..10). Used by
+ * the admin puzzle CRUD (§3.3). Returns a reason string on rejection.
+ *
+ * Approach: the safe evaluator is sampled at x = 0..3 and fit (finite
+ * differences) to a cubic, then the fit is verified against the expression at
+ * extra points — so non-polynomial or degree>3 input is rejected.
+ */
+export function parsePolynomialExpression(expr: string): ParsedPolynomial {
+  let f: (x: number) => number;
+  try {
+    f = compileSafe(expr);
+  } catch {
+    return { ok: false, reason: 'not a valid expression of x' };
+  }
+
+  const samples = [0, 1, 2, 3].map(f);
+  if (samples.some((y) => !Number.isFinite(y))) {
+    return { ok: false, reason: 'not a polynomial' };
+  }
+  const [y0, y1, y2, y3] = samples as [number, number, number, number];
+  const d1 = y1 - y0;
+  const d2 = y2 - 2 * y1 + y0;
+  const d3 = y3 - 3 * y2 + 3 * y1 - y0;
+
+  const a3 = nearestInt(d3 / 6);
+  const a2 = nearestInt(d2 / 2 - d3 / 2);
+  const a1 = nearestInt(d1 - d2 / 2 + d3 / 3);
+  const a0 = nearestInt(y0);
+  if (a3 === null || a2 === null || a1 === null || a0 === null) {
+    return { ok: false, reason: 'coefficients must be integers' };
+  }
+
+  let coeffs: number[] = [a3, a2, a1, a0];
+  // Verify the integer cubic actually matches the expression (catches degree>3,
+  // rational functions, etc.) at points outside the fitting set.
+  for (const x of [-1, 4, 0.5, -2.5]) {
+    if (Math.abs(evaluatePolynomial(coeffs, x) - f(x)) > 1e-6) {
+      return { ok: false, reason: 'must be a polynomial of degree 1–3' };
+    }
+  }
+
+  while (coeffs.length > 1 && coeffs[0] === 0) coeffs = coeffs.slice(1);
+  const degree = coeffs.length - 1;
+  if (degree < 1 || degree > 3) {
+    return { ok: false, reason: 'degree must be between 1 and 3' };
+  }
+  if (coeffs.some((c) => c < -10 || c > 10)) {
+    return { ok: false, reason: 'coefficients must be between -10 and 10' };
+  }
+  return { ok: true, coeffs };
+}
+
 export function isEquivalent(guessExpr: string, secret: Coefficients): boolean {
   let guess: (x: number) => number;
   try {

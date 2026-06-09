@@ -55,3 +55,71 @@ describe('admin auth middleware', () => {
     expect(res.status).toBe(200);
   });
 });
+
+describe('admin puzzle CRUD', () => {
+  const FUTURE = '2999-01-01';
+  const PAST = '2000-01-01';
+  const authed = (app: ReturnType<typeof freshApp>, token: string) => ({
+    post: () => request(app).post('/api/admin/puzzles').set('Authorization', `Bearer ${token}`),
+    get: () => request(app).get('/api/admin/puzzles').set('Authorization', `Bearer ${token}`),
+    put: (d: string) =>
+      request(app).put(`/api/admin/puzzles/${d}`).set('Authorization', `Bearer ${token}`),
+    del: (d: string) =>
+      request(app).delete(`/api/admin/puzzles/${d}`).set('Authorization', `Bearer ${token}`),
+  });
+  const token = (app: ReturnType<typeof freshApp>) => login(app, PASSWORD).then((r) => r.body.token);
+
+  it('schedules a valid puzzle and lists it (formatted)', async () => {
+    const app = freshApp();
+    const a = authed(app, await token(app));
+    const post = await a.post().send({ puzzleDate: FUTURE, expression: '(x-2)(x+2)', note: 'intro' });
+    expect(post.status).toBe(200);
+    expect(post.body.puzzleDate).toBe(FUTURE);
+
+    const list = await a.get();
+    const row = list.body.find((p: { puzzleDate: string }) => p.puzzleDate === FUTURE);
+    expect(row).toMatchObject({ expression: 'x^2 - 4', note: 'intro', source: 'curated' });
+  });
+
+  it('rejects an invalid expression with 400 and a reason', async () => {
+    const app = freshApp();
+    const a = authed(app, await token(app));
+    const res = await a.post().send({ puzzleDate: FUTURE, expression: 'x^4' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/rule|degree|polynomial/i);
+  });
+
+  it('rejects a duplicate date with 409', async () => {
+    const app = freshApp();
+    const a = authed(app, await token(app));
+    await a.post().send({ puzzleDate: FUTURE, expression: 'x^2 - 4' });
+    const dup = await a.post().send({ puzzleDate: FUTURE, expression: 'x - 1' });
+    expect(dup.status).toBe(409);
+  });
+
+  it('forbids editing or deleting a past date with 403', async () => {
+    const app = freshApp();
+    const a = authed(app, await token(app));
+    const put = await a.put(PAST).send({ puzzleDate: PAST, expression: 'x - 1' });
+    expect(put.status).toBe(403);
+    const del = await a.del(PAST);
+    expect(del.status).toBe(403);
+  });
+
+  it('updates then deletes a future puzzle', async () => {
+    const app = freshApp();
+    const a = authed(app, await token(app));
+    await a.post().send({ puzzleDate: FUTURE, expression: 'x^2 - 4' });
+    const put = await a.put(FUTURE).send({ puzzleDate: FUTURE, expression: 'x - 1', note: 'changed' });
+    expect(put.status).toBe(200);
+    const del = await a.del(FUTURE);
+    expect(del.status).toBe(200);
+  });
+
+  it('requires a token for puzzle management', async () => {
+    const res = await request(freshApp())
+      .post('/api/admin/puzzles')
+      .send({ puzzleDate: FUTURE, expression: 'x - 1' });
+    expect(res.status).toBe(401);
+  });
+});
