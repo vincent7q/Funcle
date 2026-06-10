@@ -76,4 +76,10 @@ describe('POST /api/auth/login', () => {
       .send({ username: 'nobody', password: 'whatever' });
     expect(res.status).toBe(401);
   });
+
+  it('rejects a malformed login body with 400', async () => {
+    const { app } = setup();
+    const res = await request(app).post('/api/auth/login').send({ username: 'x' });
+    expect(res.status).toBe(400);
+  });
 });

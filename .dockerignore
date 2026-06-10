@@ -1,0 +1,15 @@
+# Keep the Docker build context small and never ship secrets/data.
+**/node_modules
+**/dist
+**/coverage
+**/.env
+backend/data
+.git
+.vscode
+docs
+design
+math
+Dockerfile
+docker-compose.yml
+**/*.test.ts
+**/*.spec.ts

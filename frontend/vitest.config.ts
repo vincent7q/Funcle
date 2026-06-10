@@ -9,6 +9,19 @@ export default mergeConfig(
       environment: 'jsdom',
       exclude: [...configDefaults.exclude, 'e2e/**'],
       root: fileURLToPath(new URL('./', import.meta.url)),
+      coverage: {
+        provider: 'v8',
+        // Measure app logic only — bootstrap and build config are not unit-testable.
+        exclude: [
+          ...(configDefaults.coverage.exclude ?? []),
+          'src/main.ts',
+          'src/App.vue',
+          'src/router/**',
+          '*.config.js',
+          '*.config.ts',
+          'env.d.ts',
+        ],
+      },
     },
   }),
 )

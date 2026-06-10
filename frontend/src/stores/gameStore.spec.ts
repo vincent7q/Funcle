@@ -173,4 +173,51 @@ describe('gameStore', () => {
     await store.submitClue('val', '1');
     expect(mockedApi.val).not.toHaveBeenCalled();
   });
+
+  it('rejects an empty target expression without calling the backend', async () => {
+    const store = await startedStore();
+    await store.submitClue('target', '   ');
+    expect(mockedApi.target).not.toHaveBeenCalled();
+    expect(store.inputError).toBeTruthy();
+    expect(store.turnsRemaining).toBe(6);
+  });
+
+  it('accepts a numeric value from the number input (v-model delivers a Number)', async () => {
+    const store = await startedStore();
+    mockedApi.val.mockResolvedValue({ result: -4, turnsRemaining: 5, gameStatus: 'active' });
+    await store.submitClue('val', 0); // Number, not string
+    expect(mockedApi.val).toHaveBeenCalledWith('s1', 0);
+    expect(store.history[0]).toMatchObject({ state: 'val', label: 'VAL 0', result: '-4' });
+  });
+
+  it('reveals the secret when a val on the last turn loses the game', async () => {
+    const store = await startedStore();
+    mockedApi.val.mockResolvedValue({
+      result: 5,
+      turnsRemaining: 0,
+      gameStatus: 'lost',
+      secret: 'x^2 - 4',
+      secretCoeffs: [1, 0, -4],
+    });
+    await store.submitClue('val', '3');
+    expect(store.gameStatus).toBe('lost');
+    expect(store.secret).toBe('x^2 - 4');
+    expect(store.secretCoeffs).toEqual([1, 0, -4]);
+  });
+
+  it('restores the secret when resuming an already-finished daily', async () => {
+    mockedApi.getDaily.mockResolvedValue({
+      sessionId: 'd4',
+      turnsRemaining: 0,
+      puzzleNumber: 45,
+      history: [{ turnNumber: 6, command: 'target', inputX: null, expression: 'x', result: 'wrong' }],
+      secret: 'x^2 - 4',
+      secretCoeffs: [1, 0, -4],
+    });
+    const store = useGameStore();
+    await store.startDaily();
+    expect(store.gameStatus).toBe('lost');
+    expect(store.secret).toBe('x^2 - 4');
+    expect(store.secretCoeffs).toEqual([1, 0, -4]);
+  });
 });

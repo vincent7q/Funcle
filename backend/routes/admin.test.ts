@@ -31,6 +31,11 @@ describe('POST /api/admin/login', () => {
     for (let i = 0; i < 6; i++) last = await login(app, 'nope');
     expect(last!.status).toBe(429);
   });
+
+  it('rejects a malformed login body with 400', async () => {
+    const res = await request(freshApp()).post('/api/admin/login').send({});
+    expect(res.status).toBe(400);
+  });
 });
 
 describe('admin auth middleware', () => {
@@ -97,6 +102,13 @@ describe('admin puzzle CRUD', () => {
     expect(dup.status).toBe(409);
   });
 
+  it('rejects a malformed POST body with 400', async () => {
+    const app = freshApp();
+    const a = authed(app, await token(app));
+    const res = await a.post().send({ puzzleDate: 'June 1st', expression: 'x - 1' });
+    expect(res.status).toBe(400);
+  });
+
   it('forbids editing or deleting a past date with 403', async () => {
     const app = freshApp();
     const a = authed(app, await token(app));
@@ -114,6 +126,53 @@ describe('admin puzzle CRUD', () => {
     expect(put.status).toBe(200);
     const del = await a.del(FUTURE);
     expect(del.status).toBe(200);
+  });
+
+  it('rejects an invalid expression on PUT with 400', async () => {
+    const app = freshApp();
+    const a = authed(app, await token(app));
+    await a.post().send({ puzzleDate: FUTURE, expression: 'x^2 - 4' });
+    const res = await a.put(FUTURE).send({ puzzleDate: FUTURE, expression: 'x^4' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/rule|degree|polynomial/i);
+  });
+
+  it('404s a PUT for a future date with no scheduled puzzle', async () => {
+    const app = freshApp();
+    const a = authed(app, await token(app));
+    const res = await a.put(FUTURE).send({ puzzleDate: FUTURE, expression: 'x - 1' });
+    expect(res.status).toBe(404);
+  });
+
+  it('rejects a past-dated POST with 400 and a malformed PUT body with 400', async () => {
+    const app = freshApp();
+    const a = authed(app, await token(app));
+    const past = await a.post().send({ puzzleDate: PAST, expression: 'x - 1' });
+    expect(past.status).toBe(400);
+    const bad = await a.put(FUTURE).send({ expression: '' });
+    expect(bad.status).toBe(400);
+  });
+
+  it('filters the list by from/to date range', async () => {
+    const app = freshApp();
+    const a = authed(app, await token(app));
+    await a.post().send({ puzzleDate: '2999-01-01', expression: 'x - 1' });
+    await a.post().send({ puzzleDate: '2999-02-01', expression: 'x + 1' });
+    await a.post().send({ puzzleDate: '2999-03-01', expression: 'x^2 - 4' });
+
+    const ranged = await request(app)
+      .get('/api/admin/puzzles')
+      .query({ from: '2999-01-15', to: '2999-02-15' })
+      .set('Authorization', `Bearer ${await token(app)}`);
+    expect(ranged.status).toBe(200);
+    expect(ranged.body).toHaveLength(1);
+    expect(ranged.body[0].puzzleDate).toBe('2999-02-01');
+
+    const badQuery = await request(app)
+      .get('/api/admin/puzzles')
+      .query({ from: 'not-a-date' })
+      .set('Authorization', `Bearer ${await token(app)}`);
+    expect(badQuery.status).toBe(400);
   });
 
   it('requires a token for puzzle management', async () => {

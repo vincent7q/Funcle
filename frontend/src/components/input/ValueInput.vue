@@ -3,7 +3,9 @@ import { computed } from 'vue';
 import type { Command } from '@shared/types';
 
 const props = defineProps<{ command: Command }>();
-const model = defineModel<string>({ required: true });
+// Vue auto-applies the .number modifier to type="number" inputs, so the model
+// may hold a number (parseable input) or a string (target expression / partial input).
+const model = defineModel<string | number>({ required: true });
 
 const isTarget = computed(() => props.command === 'target');
 </script>

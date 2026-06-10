@@ -25,7 +25,7 @@ const settings = useSettingsStore();
 const { showGraph } = storeToRefs(settings);
 
 const command = ref<Command>('val');
-const inputValue = ref('');
+const inputValue = ref<string | number>('');
 const activeModal = ref<'help' | 'stats' | 'settings' | null>(null);
 
 const isOver = computed(() => gameStatus.value === 'won' || gameStatus.value === 'lost');

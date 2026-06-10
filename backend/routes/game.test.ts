@@ -46,6 +46,12 @@ describe('POST /api/game/val', () => {
       .send({ sessionId: '00000000-0000-0000-0000-000000000000', x: 1 });
     expect(res.status).toBe(404);
   });
+
+  it('400s when sessionId is missing', async () => {
+    const { app } = setup();
+    const res = await request(app).post('/api/game/val').send({ x: 1 });
+    expect(res.status).toBe(400);
+  });
 });
 
 describe('POST /api/game/is_inc', () => {
@@ -67,6 +73,13 @@ describe('POST /api/game/is_inc', () => {
       (await request(stat.app).post('/api/game/is_inc').send({ sessionId: stat.sessionId, x: 0 }))
         .body.result,
     ).toBe('Stationary');
+  });
+
+  it('returns "error" for invalid x WITHOUT consuming a turn (§13 Q4)', async () => {
+    const { app, sessionId } = setup();
+    const bad = await request(app).post('/api/game/is_inc').send({ sessionId, x: 'foo' });
+    expect(bad.body.result).toBe('error');
+    expect(bad.body.turnsRemaining).toBe(6);
   });
 });
 
@@ -100,6 +113,29 @@ describe('POST /api/game/target', () => {
     await request(app).post('/api/game/target').send({ sessionId, expression: 'x^2-4' }); // win
     const after = await request(app).post('/api/game/val').send({ sessionId, x: 1 });
     expect(after.status).toBe(409);
+  });
+
+  it('404s a target for an unknown session', async () => {
+    const { app } = setup();
+    const res = await request(app)
+      .post('/api/game/target')
+      .send({ sessionId: '00000000-0000-0000-0000-000000000000', expression: 'x + 1' });
+    expect(res.status).toBe(404);
+  });
+
+  it('409s a target after the game is over', async () => {
+    const { app, sessionId } = setup();
+    await request(app).post('/api/game/target').send({ sessionId, expression: 'x^2-4' }); // win
+    const again = await request(app)
+      .post('/api/game/target')
+      .send({ sessionId, expression: 'x^2-4' });
+    expect(again.status).toBe(409);
+  });
+
+  it('400s a target with a malformed body', async () => {
+    const { app, sessionId } = setup();
+    const res = await request(app).post('/api/game/target').send({ sessionId, expression: '' });
+    expect(res.status).toBe(400);
   });
 });
 

@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from 'express';
 import type { NewSessionResponse, DailyResponse, Coefficients } from '../../shared/types';
 import { TOTAL_TURNS } from '../../shared/types';
 import { newSessionRequestSchema, dailyQuerySchema } from '../../shared/schemas';
-import { generateRandom, generateFromDate } from '../engine/polynomial';
+import { generateRandom, generateFromDate, formatPolynomial } from '../engine/polynomial';
 import {
   type Db,
   type DailyPuzzleRow,
@@ -86,6 +86,13 @@ export function createSessionRouter(db: Db): Router {
       puzzleNumber: puzzle.puzzle_number,
       history: getMoves(db, session!.id),
     };
+    // The game is over for this player, so revealing the secret is no longer a
+    // cheating risk — include it so the frontend can re-show the end screen.
+    if (session!.status !== 'active') {
+      const coeffs = JSON.parse(session!.coefficients) as Coefficients;
+      body.secret = formatPolynomial(coeffs);
+      body.secretCoeffs = coeffs;
+    }
     res.json(body);
   });
 

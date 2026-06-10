@@ -1,0 +1,20 @@
+# Funcle production deployment reference (spec §15).
+# Usage: JWT_SECRET=... ADMIN_PASSWORD='...' docker compose up -d --build
+services:
+  funcle:
+    build: .
+    ports:
+      - '3000:3000'
+    environment:
+      # Long random string for signing JWTs — set via shell env or an env file.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      # Bcrypt HASH of the admin password (never the plaintext).
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD (bcrypt hash)}
+    volumes:
+      # Named volume keeps the SQLite file across container rebuilds.
+      # Back up with: docker compose cp funcle:/data/funcle.db ./funcle-backup.db
+      - funcle-data:/data
+    restart: unless-stopped
+
+volumes:
+  funcle-data:

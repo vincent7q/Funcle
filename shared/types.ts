@@ -61,6 +61,10 @@ export interface DailyResponse {
   turnsRemaining: number;
   puzzleNumber: number;
   history: MoveRecord[];
+  /** Revealed only when the resumed game is already won/lost (end-screen redisplay). */
+  secret?: string;
+  /** Secret coefficients for the end-game graph (§7.4); present with `secret`. */
+  secretCoeffs?: Coefficients;
 }
 
 /** `result` is the numeric value, or the literal `'error'` for invalid x (spec §8). */

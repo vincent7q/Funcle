@@ -79,12 +79,19 @@ export const useGameStore = defineStore('game', () => {
         .map((m) => ({ x: m.inputX as number, y: Number(m.result) }));
       turnsRemaining.value = res.turnsRemaining;
       gameStatus.value = deriveStatus(res.history, res.turnsRemaining);
+      // A finished daily includes the secret so the end screen can re-show it.
+      if (res.secret) {
+        secret.value = res.secret;
+        if (res.secretCoeffs) secretCoeffs.value = res.secretCoeffs;
+      }
     } finally {
       loading.value = false;
     }
   }
 
-  async function submitClue(command: Command, value: string): Promise<void> {
+  async function submitClue(command: Command, rawValue: string | number): Promise<void> {
+    // Number inputs deliver a number via v-model; normalize to string for parsing.
+    const value = String(rawValue);
     inputError.value = null;
     if (gameStatus.value !== 'active' || !sessionId.value) return;
 
