@@ -10,7 +10,51 @@
 
 **Tech stack:** TypeScript everywhere. Backend: Node + Express + better-sqlite3 + mathjs + zod. Frontend: Vue 3 + Vite + Pinia + Tailwind + Chart.js. Tests: Vitest. (See §2.)
 
-**Working method:** TDD for all logic (tests before implementation), DRY, YAGNI, frequent commits. Implementation happens in a dedicated git worktree.
+**Working method:** TDD for all logic (tests before implementation), DRY, YAGNI, frequent commits. (Implementation is on the `feat/scaffold` branch in the main working tree — no separate worktree was used.)
+
+---
+
+## Status (updated 2026-06-10)
+
+**Playable end-to-end with the full end-of-game experience** (Vue UI → Vite proxy → Express → SQLite → math engine): Free Play + Daily, win/lose overlay, Chart.js graph reveal, and Wordle-style share. Anti-cheat invariants enforced (the secret never leaves the backend until the game ends). The daily-puzzle **admin** (`/admin`) is complete (bcrypt+JWT login, rate-limited, puzzle CRUD with §13 validation, future-only editing), and so are **accounts, stats, and the Help/Stats/Settings overlays** (optional login, per-identity stats with streaks + distribution, show-graph toggle). Backend: **126 Vitest tests, 98%+ statement coverage** (routes, db, engine at 100%). Frontend: **68 Vitest tests, ~88% statement coverage** on app logic (gameStore 100%). `tsc`/`vue-tsc` + ESLint clean on both; both build. **Deployment-ready**: single-origin static serving (`STATIC_DIR`), multi-stage `Dockerfile` + `docker-compose.yml` with a persistent `/data` volume for SQLite.
+
+| Task | Status | Commit |
+|------|--------|--------|
+| 0.1 Scaffold backend + frontend + tooling | ✅ | `5c29bdc` |
+| 0.2 Shared domain types + zod schemas (`shared/`) | ✅ | `0d1c4b2` |
+| 1.1 SQLite DB layer (schema + `openDb`) | ✅ | `df3a800` |
+| 1.2 Express skeleton + route stubs | ✅ | `2f7df90` |
+| 2.1 `polynomial.ts` (evaluate, generate, formatPolynomial) | ✅ | `095d610` / `0c61b22` |
+| 2.2 `derivative.ts` (`is_inc` direction) | ✅ | `8745de9` |
+| 2.3 `parser.ts` (safe parse + sampling equivalence) | ✅ | `579a1ca` |
+| 3.1 `POST /session/new` + `GET /daily` | ✅ | `3f05a5c` |
+| 3.2 Game commands (`val` / `is_inc` / `target`) | ✅ | `0c61b22` |
+| 3.3 Boundary validation (zod on all request bodies) | ✅ | (with 6.2) |
+| 4.1 Static game screen + Tailwind | ✅ | `ccb954d` |
+| 4.2 Game store + API client + free-play loop | ✅ | `b33e933` |
+| 4.3 Daily mode load/resume (UI) | ✅ | `287e082` |
+| 5.1 Win/lose overlay screen | ✅ | `97ac623` |
+| 5.2 End-game graph (Chart.js) + settings store | ✅ | `5b60326` |
+| 5.3 Share feature (emoji grid) | ✅ | `f29a1a6` |
+| 6.1 Admin auth (bcrypt + JWT + rate limit) | ✅ | `6ea14b6` |
+| 6.2 Admin puzzle CRUD + expression validation | ✅ | `159aa42` |
+| 6.3 Admin page UI (`/admin`) | ✅ | `3b96b05` |
+| 7.1 Optional accounts (bcrypt) | ✅ | `a3e031c` |
+| 7.2 Stats tracking + `/stats/:userId` | ✅ | `74edb81` |
+| 7.3 Help / Stats / Settings overlays | ✅ | `df043a2` |
+| 8.1 Responsive & touch pass (CSS) | ✅ | (this commit) |
+| 8.2 Test & coverage sweep | ✅ | (this commit) |
+| 8.3 Deployment (single-origin + Docker) | ✅ | (this commit) |
+
+**3.3 note:** session + game routes already validate via zod (400 on bad bodies; `val`/`is_inc` return `"error"` for invalid `x` per §13 Q4). Finish 3.3 (admin/stats validation + 400 tests) when those routes are implemented in Phases 6/7.
+
+**8.2 note:** coverage measured with `@vitest/coverage-v8` (pinned to v2 to match Vitest 2). Backend: 126 tests, 98%+ statements — every route, db, and engine module at 100%; only the `server.ts` listen block and `config.ts` env fallbacks are uncovered (not unit-testable in-process). Frontend: 68 tests covering the stores (gameStore 100%, incl. the daily-resume secret reveal and Number-from-`<input type=number>` regressions), the API client, `ValueInput`, and all game components; pure bootstrap files (`main.ts`, `App.vue`, router, build configs) are excluded from coverage in `frontend/vitest.config.ts`.
+
+**8.3 note:** `createApp` accepts an optional `staticDir` — set `STATIC_DIR` to the built `frontend/dist` to serve the SPA and API from one origin (verified locally: `npm run build` in both packages, then `node dist/backend/server.js` served `/`, `/admin` fallback, and `/api/*`; covered by supertest tests). A multi-stage `Dockerfile` (node:20-slim for better-sqlite3 prebuilds) builds both packages and runs the compiled server with `DB_PATH=/data/funcle.db` on a persistent volume; `docker-compose.yml` is the deploy reference (requires `JWT_SECRET` + `ADMIN_PASSWORD` bcrypt hash at runtime — never baked into the image). The Docker image itself has **not** been build-tested on this machine (Docker not installed) — verify `docker compose up --build` on the deploy host. Remaining manual items: on-device phone/iPad check (8.1 acceptance) and the actual deploy to a container host.
+
+**To run locally:** `cd backend && npm run dev` (port 3000) + `cd frontend && npm run dev` (Vite proxies `/api` → 3000). Production-style: build both, then run the backend with `STATIC_DIR=../frontend/dist`.
+
+**Environment note:** frontend is pinned to a Vite 6 / Vitest 2 stack because the dev machine runs Node 20.17 (the current Vite 8/rolldown toolchain needs ≥20.19). See `CLAUDE.md` and project memory before bumping frontend deps. Branch `feat/scaffold` is **not yet pushed** to origin.
 
 ---
 

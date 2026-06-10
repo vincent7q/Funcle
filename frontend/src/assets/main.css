@@ -1,0 +1,320 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design tokens — canonical values from design/funcle_ui_blueprint.html (spec §7.2). */
+:root {
+  --color-bg: #121213;
+  --color-card: #1a1a1b;
+  --color-border: #3a3a3c;
+  --color-success: #538d4e; /* val marker, win, submit */
+  --color-success-hover: #43723f;
+  --color-directional: #b59f3b; /* is_inc marker */
+  --color-text: #ffffff;
+  --color-text-muted: #818384;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  /* Dynamic viewport unit so the layout fills mobile screens incl. browser chrome (§7.7). */
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#app {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* --- Main game screen, ported from the blueprint (spec §7.3, §7.5, §7.6) --- */
+@layer components {
+  .game-container {
+    width: 100%;
+    max-width: 450px;
+    min-height: 100dvh;
+    max-height: 750px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-sizing: border-box;
+    padding: 15px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-bg);
+  }
+
+  /* History grid */
+  .grid-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 20px 0;
+    flex-grow: 1;
+    justify-content: center;
+  }
+
+  .grid-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--color-card);
+    border: 2px solid var(--color-border);
+    border-radius: 6px;
+    min-height: 52px;
+    padding: 0 16px;
+    box-sizing: border-box;
+    font-size: 1.1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .grid-row.state-val {
+    border-color: var(--color-success);
+    background-color: rgba(83, 141, 78, 0.15);
+  }
+  .grid-row.state-val .badge {
+    background-color: var(--color-success);
+  }
+
+  .grid-row.state-inc {
+    border-color: var(--color-directional);
+    background-color: rgba(181, 159, 59, 0.15);
+  }
+  .grid-row.state-inc .badge {
+    background-color: var(--color-directional);
+  }
+
+  .grid-row.state-target-win {
+    border-color: var(--color-success);
+    background-color: rgba(83, 141, 78, 0.15);
+  }
+  .grid-row.state-target-win .badge {
+    background-color: var(--color-success);
+  }
+
+  .grid-row.state-target-fail {
+    border-color: var(--color-border);
+    background-color: rgba(58, 58, 60, 0.25);
+  }
+  .grid-row.state-target-fail .badge {
+    background-color: var(--color-border);
+  }
+
+  .grid-row.state-empty {
+    border-style: dashed;
+    opacity: 0.3;
+  }
+
+  .left-block {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .badge {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #ffffff;
+    white-space: nowrap;
+  }
+
+  .badge-empty {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--color-border);
+    flex-shrink: 0;
+  }
+
+  .awaiting-text {
+    color: var(--color-text-muted);
+    font-style: italic;
+    font-size: 0.95rem;
+  }
+
+  .result-value {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.2rem;
+  }
+
+  /* Input controls */
+  .controls-container {
+    border-top: 1px solid var(--color-border);
+    padding-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
+
+  .control-group.small {
+    flex-grow: 0;
+    width: 110px;
+  }
+
+  .control-label {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    letter-spacing: 1px;
+  }
+
+  .control-field {
+    background-color: var(--color-card);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    height: 44px; /* ~44px touch target (§7.7) */
+    border-radius: 4px;
+    padding: 0 10px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    outline: none;
+    width: 100%;
+  }
+  .control-field:focus {
+    border-color: var(--color-text-muted);
+  }
+
+  .btn-submit {
+    background-color: var(--color-success);
+    color: white;
+    border: none;
+    height: 44px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: background-color 0.2s;
+  }
+  .btn-submit:hover:not(:disabled) {
+    background-color: var(--color-success-hover);
+  }
+  .btn-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .status-bar {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-top: 5px;
+  }
+
+  /* Header */
+  .app-header {
+    text-align: center;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 10px;
+    position: relative;
+  }
+  .app-header h1 {
+    margin: 0;
+    font-size: 2.2rem;
+    letter-spacing: 3px;
+    font-weight: 700;
+  }
+  .app-subtitle {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin: 3px 0 0 0;
+  }
+  .header-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .header-btn {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    min-width: 44px;
+    height: 40px; /* ~44px touch target (§7.7) */
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 0 10px;
+  }
+  .header-btn:hover {
+    color: var(--color-text);
+    border-color: var(--color-text-muted);
+  }
+
+  /* Overlay modals (Help / Stats / Settings — §7.7) */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 16px;
+    z-index: 60;
+  }
+  .modal-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 20px;
+    max-height: 90vh;
+    overflow: auto;
+  }
+  .modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .modal-head h2 {
+    margin: 0;
+    font-size: 1.2rem;
+  }
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    min-width: 44px;
+    min-height: 40px;
+  }
+  .modal-close:hover {
+    color: var(--color-text);
+  }
+}
+
+/* Very narrow phones: stack the action dropdown and the x / expression field. */
+@media (max-width: 360px) {
+  .input-row {
+    flex-wrap: wrap;
+  }
+  .control-group.small {
+    width: 100%;
+  }
+}
