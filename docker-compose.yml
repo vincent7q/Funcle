@@ -4,7 +4,7 @@ services:
   funcle:
     build: .
     ports:
-      - '3000:3000'
+      - '3001:3000'
     environment:
       # Long random string for signing JWTs — set via shell env or an env file.
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}

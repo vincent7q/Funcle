@@ -48,9 +48,10 @@ scp -r . user@your-server-ip:~/funcle
 SSH into the server and run:
 
 ```bash
-cd ~/funcle
+cd ~/Funcle/backend
 
-# Node v22 is already installed on this server, so no extra install needed.
+# Install backend dependencies (needed to run bcrypt for hashing)
+npm ci
 
 # 1. Generate a long random JWT signing secret
 JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
@@ -61,6 +62,8 @@ ADMIN_HASH=$(node -e "const b=require('bcrypt'); b.hash('your-admin-password',10
 # Print them so you can verify
 echo "JWT_SECRET=$JWT_SECRET"
 echo "ADMIN_PASSWORD=$ADMIN_HASH"
+
+cd ~/Funcle
 ```
 
 > The admin password is what you use to log in at `/admin` to schedule daily puzzles.
@@ -72,19 +75,19 @@ echo "ADMIN_PASSWORD=$ADMIN_HASH"
 Still on the server:
 
 ```bash
-cat > ~/funcle/.env << EOF
+cat > ~/Funcle/.env << EOF
 JWT_SECRET=$JWT_SECRET
 ADMIN_PASSWORD=$ADMIN_HASH
 EOF
 
 # Restrict access so only your user can read it
-chmod 600 ~/funcle/.env
+chmod 600 ~/Funcle/.env
 ```
 
 Verify it looks correct:
 
 ```bash
-cat ~/funcle/.env
+cat ~/Funcle/.env
 # Should show two lines: JWT_SECRET=... and ADMIN_PASSWORD=$2b$10$...
 ```
 
@@ -93,7 +96,7 @@ cat ~/funcle/.env
 ## Step 5 — Build and start the app
 
 ```bash
-cd ~/funcle
+cd ~/Funcle
 
 # Build the Docker image and start in the background (-d = detached)
 docker compose up -d --build
@@ -102,7 +105,7 @@ docker compose up -d --build
 This will:
 1. Build the frontend (`npm run build` → static files)
 2. Compile the backend (`tsc` → `dist/`)
-3. Start the Node server on port 3000 with the SQLite database stored in a persistent Docker volume
+3. Start the Node server on port 3001 with the SQLite database stored in a persistent Docker volume
 
 Check it started correctly:
 
@@ -113,16 +116,18 @@ docker compose logs -f
 
 You should see: `Funcle backend listening on http://localhost:3000`
 
+> The log shows port **3000** — that is the port inside the container. From outside the server, the app is reachable on port **3001** (the host-side of the `3001:3000` mapping in `docker-compose.yml`). Both are correct.
+
 ---
 
 ## Step 6 — Open the firewall port
 
 ```bash
-sudo ufw allow 3000
-sudo ufw status   # confirm port 3000 is listed as allowed
+sudo ufw allow 3001
+sudo ufw status   # confirm port 3001 is listed as allowed
 ```
 
-If your server is on a **cloud provider** (AWS, DigitalOcean, Linode, etc.), also open port 3000 in the provider's security group or firewall panel (separate from UFW).
+If your server is on a **cloud provider** (AWS, DigitalOcean, Linode, etc.), also open port 3001 in the provider's security group or firewall panel (separate from UFW).
 
 ---
 
@@ -131,10 +136,10 @@ If your server is on a **cloud provider** (AWS, DigitalOcean, Linode, etc.), als
 Open a browser on your computer and go to:
 
 ```
-http://your-server-ip:3000
+http://your-server-ip:3001
 ```
 
-The Funcle game should load. Visit `http://your-server-ip:3000/admin` to log in with the admin password you set in Step 3.
+The Funcle game should load. Visit `http://your-server-ip:3001/admin` to log in with the admin password you set in Step 3.
 
 ---
 
@@ -177,7 +182,7 @@ server {
     server_name funcle.yourdomain.com;
 
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:3001;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -219,8 +224,8 @@ docker compose logs funcle
 ```
 Look for `Error:` lines — a missing `JWT_SECRET` or malformed `ADMIN_PASSWORD` hash is a common cause.
 
-**Port 3000 not reachable:**
-- Check `sudo ufw status` — port 3000 (or 80/443 if using Nginx) must be listed as `ALLOW`.
+**Port 3001 not reachable:**
+- Check `sudo ufw status` — port 3001 (or 80/443 if using Nginx) must be listed as `ALLOW`.
 - Check your cloud provider's firewall/security group if applicable.
 
 **Rebuild after updating code:**
